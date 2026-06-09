@@ -1,0 +1,2888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FKIT State 199 - Duel League Command Center</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apocVoid: '#040507',
+                        bunkerSteel: '#0a0d14',
+                        hudPanel: '#111522',
+                        hudHover: '#181e2e',
+                        militaryOrange: '#ff4500',
+                        militaryYellow: '#ffaa00',
+                        zombieBlood: '#880000',
+                        toxicGreen: '#39ff14',
+                        bioCyan: '#00f0ff',
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --fkit-toxic-green: #39ff14;
+            --military-orange: #ff4500;
+        }
+
+        body {
+            background-color: #040507;
+            color: #f1f5f9;
+            font-family: 'Rajdhani', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 69, 0, 0.1) 0%, transparent 55%),
+                radial-gradient(circle at 100% 100%, rgba(57, 255, 20, 0.03) 0%, transparent 40%),
+                linear-gradient(rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.65) 50%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 4px;
+        }
+
+        /* Mascot Playground */
+        .playground-container {
+            position: relative;
+            background: rgba(8, 10, 15, 0.95);
+            border: 1.5px solid rgba(255, 69, 0, 0.25);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 160px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .cat-actor {
+            position: absolute;
+            width: 70px;
+            height: 75px;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.1s ease-out;
+            z-index: 40;
+        }
+
+        .cat-actor:active { cursor: grabbing; }
+
+        /* Complex Hand-Drawn Keyframes for Cat Actions */
+        @keyframes walk-bob {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-4px) rotate(2deg); }
+        }
+        @keyframes leg-walk-1 { 0%, 100% { transform: rotate(-15deg); } 50% { transform: rotate(20deg); } }
+        @keyframes leg-walk-2 { 0%, 100% { transform: rotate(20deg); } 50% { transform: rotate(-15deg); } }
+        @keyframes sleeping-breath { 0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.95; } 50% { transform: scaleY(0.92) scaleX(1.03); opacity: 0.85; } }
+        @keyframes tail-waging { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(25deg); } }
+        @keyframes startled-vibrate { 0%, 100% { transform: translate(0, 0) scale(1.1); } 20% { transform: translate(-2px, 2px) scale(1.1); } 40% { transform: translate(2px, -2px) scale(1.1); } 60% { transform: translate(-1px, -1px) scale(1.1); } 80% { transform: translate(2px, 1px) scale(1.1); } }
+        @keyframes float-zzz { 0% { transform: translate(0, 0) scale(0.6); opacity: 0; } 50% { opacity: 1; } 100% { transform: translate(-15px, -30px) scale(1.1); opacity: 0; } }
+
+        /* Catnip Backflip and Hyper Spin Animation */
+        @keyframes cat-backflip {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.35); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        @keyframes catnip-glow-pulse {
+            0%, 100% { filter: drop-shadow(0 0 6px #39ff14) drop-shadow(0 0 12px rgba(57, 255, 20, 0.45)); }
+            50% { filter: drop-shadow(0 0 18px #39ff14) drop-shadow(0 0 32px rgba(57, 255, 20, 0.9)); }
+        }
+
+        /* Dynamic Class States injected by JS script */
+        .state-walking .actor-body { animation: walk-bob 0.5s infinite ease-in-out; }
+        .state-walking .leg-l { animation: leg-walk-1 0.5s infinite ease-in-out; }
+        .state-walking .leg-r { animation: leg-walk-2 0.5s infinite ease-in-out; }
+        .state-sleeping { animation: sleeping-breath 3s infinite ease-in-out; transform-origin: center bottom; }
+        .state-sleeping .eye-open { display: none; }
+        .state-sleeping .eye-closed { display: block !important; }
+        .state-sleeping .cat-actor-svg { transform: rotate(85deg) translateY(12px); transform-origin: center center; }
+        .state-sleeping .tail { animation: tail-waging 4s infinite ease-in-out; }
+        
+        .state-purring .actor-body { animation: walk-bob 1.5s infinite ease-in-out; }
+        .state-purring .eye-open { display: none; }
+        .state-purring .eye-closed { display: block !important; }
+        .state-purring .tail { animation: tail-waging 0.5s infinite ease-in-out; }
+
+        .state-startled { animation: startled-vibrate 0.3s infinite alternate; }
+        .state-startled .eye-scared { display: block !important; }
+        .state-startled .eye-open { display: none; }
+        .state-startled .tail { transform: rotate(-45deg) scaleY(1.3) !important; }
+
+        /* Catnip states combine rotation, wavy sways, and pulsing toxic glows */
+        .state-eating .actor-body { animation: walk-bob 0.3s infinite ease-in-out; }
+        .state-catnip-high .cat-render-wrapper { 
+            animation: cat-backflip 2.5s infinite ease-in-out, catnip-glow-pulse 1.4s infinite ease-in-out !important; 
+            transform-origin: center center; 
+        }
+        .state-catnip-high .eye-open { display: none; }
+        .state-catnip-high .eye-scared { display: block !important; }
+
+        .state-dragged { transform: scale(1.1); filter: brightness(1.2); }
+        .state-dragged .leg-l, .state-dragged .leg-r { transform: rotate(45deg); }
+        .state-dragged .eye-scared { display: block !important; }
+        .state-dragged .eye-open { display: none; }
+
+        .tail { transform-origin: 15px 44px; animation: tail-waging 1.8s infinite ease-in-out; }
+
+        /* Laser Dot indicator and Crosshair Reticle */
+        .laser-pointer-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ff0000;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 35px #ff0000;
+            z-index: 35;
+            display: none;
+            transform: translate(-50%, -50%);
+        }
+
+        .laser-reticle {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border: 1.5px dashed rgba(255, 0, 0, 0.65);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 34;
+            display: none;
+            transform: translate(-50%, -50%);
+            animation: rotate-reticle 4s linear infinite;
+        }
+
+        @keyframes rotate-reticle {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* High-tech Glowing red crosshair SVG pointer when laser is active */
+        .laser-active-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="%23ff0000" stroke="%23ff9999" stroke-width="1.5"/><line x1="12" y1="0" x2="12" y2="24" stroke="%23ff0000" stroke-width="0.5" stroke-dasharray="2 2"/><line x1="0" y1="12" x2="24" y2="12" stroke="%23ff0000" stroke-width="0.5" stroke-dasharray="2 2"/></svg>') 12 12, crosshair !important;
+        }
+
+        /* Catnip radioactive mist */
+        .catnip-mist-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(57, 255, 20, 0.16) 0%, transparent 80%);
+            mix-blend-mode: screen;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            pointer-events: none;
+            z-index: 20;
+            animation: pulse-mist 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-mist {
+            0%, 100% { transform: scale(1); filter: opacity(0.8); }
+            50% { transform: scale(1.04); filter: opacity(1) drop-shadow(0 0 12px rgba(57, 255, 20, 0.25)); }
+        }
+
+        /* Float Particles */
+        .particle-floating {
+            position: absolute;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        .zzz-particle {
+            animation: float-zzz 2.5s ease-out infinite;
+            color: var(--fkit-toxic-green);
+            text-shadow: 0 0 4px rgba(57, 255, 20, 0.4);
+        }
+
+        .heart-particle {
+            animation: float-zzz 1.2s ease-out forwards;
+            font-size: 18px;
+            filter: drop-shadow(0 0 4px #ff4500);
+        }
+
+        .clash-flash-particle {
+            position: absolute;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 65;
+            animation: float-zzz 0.8s ease-out forwards;
+            filter: drop-shadow(0 0 6px var(--fkit-toxic-green));
+        }
+
+        /* Catnip Leaf Particle */
+        .leaf-particle {
+            position: absolute;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 55;
+            animation: float-leaf 4s linear infinite;
+            filter: drop-shadow(0 0 3px rgba(57, 255, 20, 0.6));
+        }
+
+        @keyframes float-leaf {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+            50% { transform: translateY(120px) rotate(180deg) translateX(15px); opacity: 0.8; }
+            100% { transform: translateY(240px) rotate(360deg) translateX(-10px); opacity: 0; }
+        }
+
+        /* Dynamic claw scratch damages */
+        .claw-scratch-damage {
+            position: absolute;
+            width: 40px;
+            height: 35px;
+            pointer-events: none;
+            z-index: 25;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M5,5 Q12,20 18,35 M15,5 Q22,20 28,35 M25,5 Q32,20 38,35" fill="none" stroke="%2339ff14" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/></svg>');
+            animation: scratch-fade 1.5s forwards;
+            filter: drop-shadow(0 0 4px var(--fkit-toxic-green));
+        }
+
+        @keyframes scratch-fade {
+            0% { opacity: 1; transform: scale(0.9) rotate(-10deg); }
+            10% { transform: scale(1.1) rotate(5deg); }
+            100% { opacity: 0; transform: scale(1) rotate(0); }
+        }
+
+        /* Speech bubbles for each actor */
+        .actor-bubble {
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%) translateY(5px);
+            background: #080a0f;
+            border: 1.5px solid var(--fkit-toxic-green);
+            color: #f1f5f9;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.7rem;
+            padding: 5px 8px;
+            border-radius: 8px;
+            width: 135px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            text-transform: none;
+            z-index: 50;
+        }
+        .actor-bubble.active { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Food element */
+        .food-item {
+            position: absolute;
+            width: 25px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 30;
+            filter: drop-shadow(0 0 5px var(--fkit-toxic-green));
+            transition: opacity 0.5s;
+        }
+
+        /* Wireframe details */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #06080c; }
+        ::-webkit-scrollbar-thumb { background: #182030; border: 1px solid #ff4500; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #39ff14; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .sidebar-menu { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-menu.active { transform: translateX(0); }
+    </style>
+</head>
+<body class="p-2 md:p-6 flex justify-center items-start min-h-screen">
+
+    <div class="phone-wrapper w-full max-w-[480px] bg-bunkerSteel border-[3px] border-[#181d2a] rounded-[40px] overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.9)] flex flex-col relative min-h-[820px]">
+        
+        <!-- Wireframe corners -->
+        <div class="absolute top-[20px] left-[20px] w-3 h-3 border-t-2 border-l-2 border-militaryOrange pointer-events-none z-10"></div>
+        <div class="absolute top-[20px] right-[20px] w-3 h-3 border-t-2 border-r-2 border-militaryOrange pointer-events-none z-10"></div>
+        <div class="absolute bottom-[20px] left-[20px] w-3 h-3 border-b-2 border-l-2 border-militaryOrange pointer-events-none z-10"></div>
+        <div class="absolute bottom-[20px] right-[20px] w-3 h-3 border-b-2 border-r-2 border-militaryOrange pointer-events-none z-10"></div>
+
+        <!-- Top status bar -->
+        <div class="h-[32px] bg-[#06080b] flex justify-between items-center px-6 text-[11px] text-[#7c8b9d] font-orbitron border-b border-[#141822] z-20 shrink-0">
+            <span class="text-white font-bold">STATE-199</span>
+            <span class="text-toxicGreen font-black animate-pulse flex items-center gap-1">⚠️ SECURE SECTOR</span>
+            <div class="flex gap-1">📶 🔋</div>
+        </div>
+
+        <!-- Simulation control bar -->
+        <div class="bg-gradient-to-b from-[#180909] to-bunkerSteel border-b border-[#301616] p-2.5 z-10 shrink-0">
+            <div class="flex justify-between items-center text-[10px] font-bold text-militaryOrange mb-1 uppercase">
+                <span>🔑 Bunker Security Override Uplink</span>
+                <span id="role-status-badge" class="px-1.5 py-0.5 rounded border border-militaryOrange bg-militaryOrange/10">Admin Mode</span>
+            </div>
+            <select id="role-simulator-dropdown" onchange="swapOperationalRole()" class="w-full bg-[#080a0f] border border-[#2b1212] text-white font-rajdhani font-semibold text-xs py-1 px-2 rounded focus:outline-none focus:border-militaryOrange">
+                <option value="Admin">⚡ DEV OVERRIDE (Master Administrator Access)</option>
+                <option value="R5">👑 R5 — Alliance Leader Profile (ScratchMcGee)</option>
+                <option value="R4">⚔️ R4 — Officer Profile (ClawWhore)</option>
+                <option value="R3">🔥 R3 — Active Specialist (Mooshii)</option>
+                <option value="R1">🌱 R1 — New Recruit Profile (BioWhiskers)</option>
+            </select>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="view-dashboard" class="app-content relative px-4 pt-4 pb-4 flex-1 overflow-y-auto">
+            
+            <header class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebarMenu(true)" class="p-1.5 bg-[#0e1118] border border-militaryOrange/30 text-militaryOrange rounded-lg hover:bg-militaryOrange/10 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="font-orbitron font-black text-2xl text-white flex items-center gap-1 leading-none">
+                            FKIT <span class="text-militaryOrange text-xl">🐾</span>
+                        </h1>
+                        <p class="text-[9px] text-toxicGreen font-semibold tracking-wider uppercase mt-0.5 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-toxicGreen rounded-full inline-block animate-ping shadow-[0_0_8px_#39ff14]"></span>
+                            State 199 Duel Command
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-1 items-end">
+                    <button onclick="triggerEnlistModal()" id="enlist-btn-dash" class="bg-militaryOrange/10 border border-militaryOrange text-militaryOrange text-[11px] font-bold font-rajdhani px-2 py-1 rounded hover:bg-militaryOrange hover:text-black uppercase transition-all shadow-[0_0_10px_rgba(255,69,0,0.1)] w-full">
+                        ⚡ Enlist
+                    </button>
+                    <button onclick="navigateView('upload')" id="dashboard-upload-btn" class="bg-[#12241a] border border-toxicGreen/50 text-toxicGreen text-[10px] font-bold font-rajdhani px-2 py-1 rounded hover:bg-toxicGreen hover:text-black uppercase transition-all w-full hidden">
+                        📊 Quick Upload
+                    </button>
+                </div>
+            </header>
+
+            <!-- 6-Day Duel Checklist & Opponent Tracker -->
+            <div class="bg-gradient-to-r from-[#0d121c] to-[#06080c] border border-bioCyan/25 rounded-xl p-3 mb-4 relative overflow-hidden">
+                <div class="absolute right-0 top-0 opacity-10 pointer-events-none">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 22h20L12 2zm0 4.5l7.5 13.5h-15L12 6.5z"/></svg>
+                </div>
+                <div class="flex justify-between items-center text-xs font-bold text-white uppercase mb-2 font-rajdhani relative z-10">
+                    <div class="flex flex-col">
+                        <span id="league-week-header" class="text-[13px] font-bold text-white">⚔️ Season 1 • Week 1</span>
+                        <span id="matchup-vs-alliance" class="text-toxicGreen text-[11px] font-semibold">VS. RRH Alliance</span>
+                    </div>
+                    <button onclick="triggerEditMatchupDetails()" id="btn-edit-matchup" class="hidden text-[10px] bg-militaryOrange/20 text-militaryOrange border border-militaryOrange/40 rounded px-1.5 py-0.5 hover:bg-militaryOrange hover:text-black">✏️ Edit</button>
+                </div>
+                
+                <div class="flex justify-between items-center border-t border-white/5 pt-2 mb-2 relative z-10">
+                    <span class="text-[10px] text-[#7c8b9d] uppercase tracking-wider font-bold">Matchup Target Checklist (4/6 wins needed)</span>
+                    <span id="matchup-points-banner" class="text-militaryYellow font-orbitron font-bold text-xs">Points: 0 / 14</span>
+                </div>
+
+                <!-- Horizontal Checklist (Monday to Saturday) -->
+                <div class="grid grid-cols-6 gap-1 relative z-10 mb-1" id="duel-day-checklist">
+                    <!-- Day Items injected dynamically by JS -->
+                </div>
+                
+                <div class="text-right mt-1 relative z-10">
+                    <span id="matchup-outcome-badge" class="text-[10px] font-extrabold font-orbitron tracking-widest uppercase bg-zombieBlood/30 border border-zombieBlood text-white px-2 py-0.5 rounded">BATTLE ACTIVE</span>
+                </div>
+            </div>
+
+            <!-- Standard Metrics Panels -->
+            <div class="grid grid-cols-2 gap-2 mb-5">
+                <div class="bg-hudPanel border border-[#1d2538] rounded-xl p-2.5 relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-militaryOrange">
+                    <span class="text-[9px] text-[#7c8b9d] uppercase tracking-wider block font-semibold mb-0.5">🐾 Total Survivors</span>
+                    <span id="agg-total-members" class="font-orbitron font-black text-lg text-white">0</span>
+                </div>
+                <div class="bg-hudPanel border border-[#1d2538] rounded-xl p-2.5 relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-bioCyan">
+                    <span class="text-[9px] text-[#7c8b9d] uppercase tracking-wider block font-semibold mb-0.5">⚡ Median CP</span>
+                    <span id="agg-median-cp" class="font-orbitron font-black text-lg text-bioCyan">0G</span>
+                </div>
+                <div class="bg-hudPanel border border-[#1d2538] rounded-xl p-2.5 relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-militaryYellow">
+                    <span class="text-[9px] text-[#7c8b9d] uppercase tracking-wider block font-semibold mb-0.5">🎖️ Avg 1st APC</span>
+                    <span id="agg-avg-apc" class="font-orbitron font-black text-lg text-militaryYellow">0G</span>
+                </div>
+                <div class="bg-hudPanel border border-[#1d2538] rounded-xl p-2.5 relative overflow-hidden before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-toxicGreen">
+                    <span class="text-[9px] text-[#7c8b9d] uppercase tracking-wider block font-semibold mb-0.5">☠️ Total Kills</span>
+                    <span id="agg-total-kills" class="font-orbitron font-black text-lg text-toxicGreen">0M</span>
+                </div>
+            </div>
+
+            <!-- Carousel 1: Last Week Performance Leaderboards -->
+            <div class="mb-5">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <h2 class="font-orbitron font-bold text-bioCyan text-xs uppercase flex items-center gap-1">⚡ Last Week Performance</h2>
+                    <div class="flex gap-1.5 items-center">
+                        <button onclick="scrollCarousel('carousel-weekly', -1)" class="w-5 h-5 flex items-center justify-center rounded-full bg-[#111522] border border-bioCyan text-bioCyan text-[10px] hover:bg-bioCyan hover:text-black transition-colors" title="Scroll Left">&lt;</button>
+                        <button onclick="scrollCarousel('carousel-weekly', 1)" class="w-5 h-5 flex items-center justify-center rounded-full bg-[#111522] border border-bioCyan text-bioCyan text-[10px] hover:bg-bioCyan hover:text-black transition-colors" title="Scroll Right">&gt;</button>
+                    </div>
+                </div>
+                <div class="flex overflow-x-auto snap-x snap-mandatory hide-scroll gap-3 pb-2 scroll-smooth" id="carousel-weekly">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+
+            <!-- Carousel 2: All-Time Rankings -->
+            <div class="mb-5">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <h2 class="font-orbitron font-bold text-militaryOrange text-xs uppercase flex items-center gap-1">🌟 All-Time Rankings</h2>
+                    <div class="flex gap-1.5 items-center">
+                        <button onclick="scrollCarousel('carousel-season', -1)" class="w-5 h-5 flex items-center justify-center rounded-full bg-[#111522] border border-militaryOrange text-militaryOrange text-[10px] hover:bg-militaryOrange hover:text-black transition-colors" title="Scroll Left">&lt;</button>
+                        <button onclick="scrollCarousel('carousel-season', 1)" class="w-5 h-5 flex items-center justify-center rounded-full bg-[#111522] border border-militaryOrange text-militaryOrange text-[10px] hover:bg-militaryOrange hover:text-black transition-colors" title="Scroll Right">&gt;</button>
+                    </div>
+                </div>
+                <div class="flex overflow-x-auto snap-x snap-mandatory hide-scroll gap-3 pb-2 scroll-smooth" id="carousel-season">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+
+            <!-- Feral Kitten Tactical Playground -->
+            <div id="sandbox-wrapper" class="mt-4 pb-4">
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <h2 class="font-orbitron font-bold text-toxicGreen text-xs uppercase flex items-center gap-1">🐾 FKIT Feral Sandbox</h2>
+                    <div class="flex gap-1">
+                        <button onclick="triggerSpawnFood()" class="playground-control-btn bg-toxicGreen/15 border border-toxicGreen/40 text-toxicGreen text-[10px] font-bold px-2 py-0.5 rounded hover:bg-toxicGreen/30 transition-all">🐟 Feed Fish</button>
+                        <button onclick="triggerCatnip()" class="playground-control-btn bg-emerald-500/15 border border-emerald-500/40 text-emerald-500 text-[10px] font-bold px-2 py-0.5 rounded hover:bg-emerald-500/30 transition-all">🍃 Catnip</button>
+                        <button id="laser-toggle-btn" onclick="toggleLaserPointer()" class="playground-control-btn bg-hudPanel border border-red-500/30 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded hover:border-red-500/80 transition-all">🔴 Laser</button>
+                    </div>
+                </div>
+                
+                <!-- Sandbox cage -->
+                <div id="playground-field" class="playground-container relative">
+                    <div class="absolute top-[10px] left-[10px] text-[8px] font-orbitron text-white/25 pointer-events-none uppercase tracking-widest">🧬 S199 Interactive Sandbox</div>
+                    <div id="laser-dot" class="laser-pointer-dot"></div>
+                    <div id="laser-reticle" class="laser-reticle"></div>
+                    <div id="catnip-mist-overlay" class="catnip-mist-overlay"></div>
+                    <!-- Food items, scratch animations, catnip, and cats spawned here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Roster Page -->
+        <div id="view-roster" class="app-content relative px-4 pt-4 pb-4 flex-1 overflow-y-auto hidden">
+            <header class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-lg text-white uppercase flex items-center gap-1">👥 Alliance Roster</h2>
+                    <p class="text-[9px] text-[#7c8b9d] uppercase tracking-wider">Database of active combat operators</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="triggerEnlistModal()" id="enlist-btn" class="bg-militaryOrange/10 border border-militaryOrange text-militaryOrange text-[11px] font-bold font-rajdhani px-2 py-1.5 rounded hover:bg-militaryOrange hover:text-black uppercase transition-all shadow-[0_0_10px_rgba(255,69,0,0.1)] hidden">
+                        ⚡ Enlist
+                    </button>
+                    <button onclick="navigateView('dashboard')" class="bg-[#141924] border border-[#232d3f] text-white text-[11px] font-bold px-2 py-1.5 rounded-lg hover:bg-militaryOrange hover:text-black uppercase transition-all">
+                        ⬅️ Back
+                    </button>
+                </div>
+            </header>
+
+            <div class="bg-hudPanel border border-[#1d2538] rounded-2xl p-3 mb-6">
+                <div class="flex flex-col gap-2 mb-3">
+                    <div class="relative">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7c8b9d]" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" id="roster-search-field" oninput="rebuildRosterTable()" placeholder="Search survivors..." class="w-full bg-[#06080c] border border-[#1d2434] rounded-lg py-1.5 pl-8 pr-3 text-white font-rajdhani text-xs focus:outline-none focus:border-militaryOrange">
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 text-[11px] text-[#7c8b9d] font-semibold">
+                        <div class="flex items-center gap-1">
+                            <span>Sort:</span>
+                            <select id="roster-sort-selector" onchange="rebuildRosterTable()" class="bg-[#06080c] border border-[#1d2434] rounded px-1.5 py-0.5 text-white focus:outline-none w-full">
+                                <option value="duel_desc">Duel Score</option>
+                                <option value="cp_desc">CP (G)</option>
+                                <option value="apc_desc">1st APC</option>
+                                <option value="apc2_desc">2nd APC</option>
+                                <option value="kills_desc">Kills</option>
+                                <option value="name_asc">Name (A-Z)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span>Rank:</span>
+                            <select id="roster-rank-filter" onchange="rebuildRosterTable()" class="bg-[#06080c] border border-[#1d2434] rounded px-1.5 py-0.5 text-white focus:outline-none w-full">
+                                <option value="ALL">All Ranks</option>
+                                <option value="R5">R5 Only</option>
+                                <option value="R4">R4 Only</option>
+                                <option value="R3">R3 Only</option>
+                                <option value="R2">R2 Only</option>
+                                <option value="R1">R1 Only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-[#1d2434]">
+                    <table class="w-full text-left border-collapse min-w-[500px]">
+                        <thead>
+                            <tr class="border-b border-[#1d2434] bg-[#0c0e15] text-[9px] text-[#7c8b9d] uppercase font-bold">
+                                <th class="p-2">Fighter</th>
+                                <th class="p-2">Rank</th>
+                                <th class="p-2">CP (G)</th>
+                                <th class="p-2">APC1 (G)</th>
+                                <th class="p-2">APC2 (G)</th>
+                                <th class="p-2 text-right">Kills</th>
+                                <th class="p-2 text-right text-white">Duel (M)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roster-table-body">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Page -->
+        <div id="view-history" class="app-content relative px-4 pt-4 pb-4 flex-1 overflow-y-auto hidden">
+            <header class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-lg text-bioCyan uppercase">📜 Duel Archive</h2>
+                    <p class="text-[9px] text-[#7c8b9d] uppercase tracking-wider">Historical performance metrics records</p>
+                </div>
+                <button onclick="navigateView('dashboard')" class="bg-[#141924] border border-[#232d3f] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg hover:bg-militaryOrange hover:text-black uppercase transition-all">
+                    ⬅️ Back
+                </button>
+            </header>
+
+            <div class="bg-[#090c12] border border-[#161d2b] p-3 rounded-xl mb-4 flex flex-col gap-2">
+                <span class="text-[10px] font-bold text-bioCyan uppercase block border-b border-white/5 pb-1">🔍 Filter Archives</span>
+                <input type="text" id="history-search-input" oninput="renderDuelLogsHistoryPage()" placeholder="Search by Opponent Name..." class="w-full bg-[#06080c] border border-[#1d2434] rounded text-white text-xs px-2 py-1.5 focus:outline-none focus:border-bioCyan">
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">Sort By:</label>
+                    <select id="history-sort-dropdown" onchange="renderDuelLogsHistoryPage()" class="flex-1 bg-[#06080c] border border-[#1d2434] rounded text-white text-xs px-2 py-1 focus:outline-none">
+                        <option value="date_desc">Newest First</option>
+                        <option value="date_asc">Oldest First</option>
+                        <option value="score_desc">Highest Total Score</option>
+                        <option value="score_asc">Lowest Total Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3" id="history-logs-container">
+                <!-- Dynamically loaded historical matchups -->
+            </div>
+        </div>
+
+        <!-- Batch Score Upload Page -->
+        <div id="view-batch-upload" class="app-content relative px-4 pt-4 pb-4 flex-1 overflow-y-auto hidden">
+            <header class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-lg text-militaryOrange uppercase">📊 Weekly Upload</h2>
+                    <p class="text-[9px] text-[#7c8b9d] uppercase tracking-wider">Record VS Duel scores in Millions (M)</p>
+                </div>
+                <button onclick="navigateView('dashboard')" class="bg-[#141924] border border-[#232d3f] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg hover:bg-militaryOrange hover:text-black uppercase transition-all">
+                    ⬅️ Exit
+                </button>
+            </header>
+
+            <div class="bg-[#090c12] border border-[#161d2b] p-3 rounded-xl mb-4 flex flex-col gap-2.5">
+                <span class="text-[10px] font-bold text-bioCyan uppercase block border-b border-white/5 pb-1">🌍 Define Matchup Attributes</span>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="flex flex-col gap-0.5">
+                        <label class="text-[9px] text-[#7c8b9d] font-semibold uppercase">League/Season</label>
+                        <input type="text" id="upload-form-league" class="bg-[#06080c] border border-[#1d2434] rounded text-white text-xs px-2 py-1 focus:outline-none focus:border-militaryOrange" placeholder="e.g. Season 1">
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <label class="text-[9px] text-[#7c8b9d] font-semibold uppercase">Combat Week</label>
+                        <input type="text" id="upload-form-week" class="bg-[#06080c] border border-[#1d2434] rounded text-white text-xs px-2 py-1 focus:outline-none focus:border-militaryOrange" placeholder="e.g. Week 1">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-0.5">
+                    <label class="text-[9px] text-[#7c8b9d] font-semibold uppercase">Opponent Alliance Name</label>
+                    <input type="text" id="upload-form-opponent" class="bg-[#06080c] border border-[#1d2434] rounded text-white text-xs px-2 py-1 focus:outline-none focus:border-militaryOrange" placeholder="e.g. RRH Alliance">
+                </div>
+            </div>
+
+            <div class="bg-[#0c0e15] border border-[#1d2538] rounded-xl p-3">
+                <span class="text-[10px] font-bold text-[#7c8b9d] uppercase block mb-2 tracking-wider">Squad Member Score Entry (Millions 'M')</span>
+                <div id="batch-upload-list" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                    <!-- Dynamically generated rows -->
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="navigateView('dashboard')" class="flex-1 bg-[#182030] border border-[#2b3952] text-white text-xs font-bold py-2.5 rounded-lg uppercase">
+                    Cancel
+                </button>
+                <button id="btn-commit-batch-scores" onclick="saveSundayBatchUploadData()" class="flex-1 bg-militaryOrange text-black text-xs font-bold py-2.5 rounded-lg uppercase shadow-lg">
+                    💾 Commit Scores
+                </button>
+            </div>
+        </div>
+
+        <!-- Dedicated Kitten Handbook Page -->
+        <div id="view-kitten-guide" class="app-content relative px-4 pt-4 pb-4 flex-1 overflow-y-auto hidden">
+            <header class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="font-orbitron font-black text-lg text-toxicGreen uppercase">🐾 Sandbox Handbook</h2>
+                    <p class="text-[9px] text-[#7c8b9d] uppercase tracking-wider">Command protocols for the feral felines</p>
+                </div>
+                <button onclick="navigateView('dashboard')" class="bg-[#141924] border border-[#232d3f] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg hover:bg-militaryOrange hover:text-black uppercase transition-all">
+                    ⬅️ Back
+                </button>
+            </header>
+
+            <div class="space-y-3.5 mb-6 text-[#cbd5e1]">
+                <!-- Spawning Treats Manual -->
+                <div class="bg-[#0d121c] border border-toxicGreen/20 rounded-xl p-3">
+                    <span class="text-toxicGreen text-xs font-orbitron font-bold uppercase block mb-1">🐟 Spawning Treats</span>
+                    <p class="text-xs leading-relaxed">
+                        Clicking the Feed Fish button drops radioactive fish treats <strong class="text-white">🐟</strong> that swim globally around your screen. Nearby kittens will immediately alert, pursue, scale panels, and pounce to eat the snack!
+                    </p>
+                </div>
+
+                <!-- Overdrive Manual -->
+                <div class="bg-[#0d121c] border border-emerald-500/20 rounded-xl p-3">
+                    <span class="text-emerald-400 text-xs font-orbitron font-bold uppercase block mb-1">🍃 Catnip Overdrive (Hyper Mode)</span>
+                    <p class="text-xs leading-relaxed">
+                        Triggering Catnip sprays the screen with an emerald radioactive mist and activates a dreamy overdrive state. Kittens rotate with barrel backflips, float lazily, glow neon green, and emit waves of glowing leaves.
+                    </p>
+                </div>
+
+                <!-- Laser Manual -->
+                <div class="bg-[#0d121c] border border-red-500/20 rounded-xl p-3">
+                    <span class="text-red-500 text-xs font-orbitron font-bold uppercase block mb-1">🔴 Tactical Laser Scope</span>
+                    <p class="text-xs leading-relaxed">
+                        Enabling the Laser changes your cursor into a high-tech reticle. Kittens enter hunting mode, scaling any UI element, card, or table vertically and horizontally to chase the targeting dot!
+                    </p>
+                </div>
+
+                <!-- Drag & Drop Manual -->
+                <div class="bg-[#0d121c] border border-bioCyan/20 rounded-xl p-3">
+                    <span class="text-bioCyan text-xs font-orbitron font-bold uppercase block mb-1">👆 Drag & Drop Physics</span>
+                    <p class="text-xs leading-relaxed">
+                        Grab and carry any kitten anywhere on your active screen using smooth scrolling dragging logic. On release, gravity pulls them naturally down to stand on the nearest header or metrics card.
+                    </p>
+                </div>
+
+                <!-- Liking Manual -->
+                <div class="bg-[#0d121c] border border-militaryOrange/20 rounded-xl p-3">
+                    <span class="text-militaryOrange text-xs font-orbitron font-bold uppercase block mb-1">💖 Affection & Liking Stats</span>
+                    <p class="text-xs leading-relaxed">
+                        Feeding fish treats or carrying felines around builds their liking level. Happy kittens emit floating neon hearts <strong class="text-white">❤️</strong> and Purr periodically.
+                    </p>
+                </div>
+
+                <!-- Tail Manual -->
+                <div class="bg-[#0d121c] border border-militaryYellow/20 rounded-xl p-3">
+                    <span class="text-militaryYellow text-xs font-orbitron font-bold uppercase block mb-1">🐈 Tail Tap Action (Startle)</span>
+                    <p class="text-xs leading-relaxed">
+                        Tap a kitten near their tail to startle them. They will jump, hiss, and display a warning indicator <strong class="text-white">❗</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="p-4 bg-gradient-to-t from-apocVoid to-transparent shrink-0">
+            <button id="auth-signature-btn" onclick="openSignatureCredentialPrompt()" class="pointer-events-auto w-full bg-gradient-to-r from-[#2c0909] to-[#0f0404] border border-militaryOrange/40 rounded-full text-white font-rajdhani font-bold text-xs uppercase py-2.5 flex items-center justify-center gap-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.85)] hover:border-militaryOrange transition-all">
+                <span>👤</span> Register Outpost Callsign
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation Drawer -->
+        <div id="sidebar-menu-drawer" class="sidebar-menu absolute top-0 left-0 w-[270px] h-full bg-[#080b11] border-r-2 border-[#1c2230] z-50 flex flex-col p-4 shadow-[10px_0_30px_rgba(0,0,0,0.85)]">
+            <div class="flex justify-between items-center pb-3 border-b border-[#1c2230] mb-4">
+                <span class="font-orbitron text-xs font-bold text-militaryOrange uppercase">🛰️ Menu Nav</span>
+                <button onclick="toggleSidebarMenu(false)" class="text-[#7c8b9d] hover:text-white font-bold text-lg">&times;</button>
+            </div>
+
+            <nav class="flex flex-col gap-2 mb-4">
+                <button onclick="navigateView('dashboard')" class="text-left w-full px-3 py-2 bg-[#111522] border border-white/5 hover:border-militaryOrange/30 rounded text-xs font-bold text-white uppercase transition-colors">
+                    🛰️ Command Dashboard
+                </button>
+                <button onclick="navigateView('roster')" class="text-left w-full px-3 py-2 bg-[#111522] border border-white/5 hover:border-militaryOrange/30 rounded text-xs font-bold text-white uppercase transition-colors">
+                    👥 Alliance Roster
+                </button>
+                <button onclick="navigateView('history')" class="text-left w-full px-3 py-2 bg-[#111522] border border-white/5 hover:border-militaryOrange/30 rounded text-xs font-bold text-white uppercase transition-colors">
+                    📜 Duel Logs History
+                </button>
+                <button onclick="navigateView('kitten-guide')" class="text-left w-full px-3 py-2 bg-[#111522] border border-toxicGreen/20 hover:border-toxicGreen/50 rounded text-xs font-bold text-toxicGreen uppercase transition-colors">
+                    🐾 Sandbox Handbook
+                </button>
+                <button id="nav-upload-btn" onclick="navigateView('upload')" class="hidden text-left w-full px-3 py-2 bg-[#12241a] border border-toxicGreen/30 hover:border-toxicGreen/80 rounded text-xs font-bold text-toxicGreen uppercase transition-colors shadow-md mt-2">
+                    📊 Upload Scores
+                </button>
+            </nav>
+
+            <div class="mt-auto pt-3 border-t border-[#1c2230] flex flex-col gap-2">
+                <div id="admin-notice-label" class="text-[10px] text-zombieBlood font-bold uppercase text-center mb-1">R4/R5 Uplink Locked</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Fighter Profile View Modal -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[998] flex justify-center items-center p-4 opacity-0 pointer-events-none transition-opacity duration-200" id="fighter-profile-modal">
+        <div class="bg-hudPanel border-2 border-bioCyan/30 rounded-[20px] w-full max-w-[370px] p-5 shadow-[0_15px_40px_rgba(0,0,0,0.95)] max-h-[90vh] overflow-y-auto relative">
+            <div class="absolute top-[15px] left-[15px] w-2.5 h-2.5 border-t-2 border-l-2 border-bioCyan/50 pointer-events-none"></div>
+            <div class="absolute top-[15px] right-[15px] w-2.5 h-2.5 border-t-2 border-r-2 border-bioCyan/50 pointer-events-none"></div>
+            
+            <div class="flex justify-between items-start pb-2 border-b border-[#1c2230] mb-3">
+                <div>
+                    <span id="profile-modal-rank" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-militaryOrange/10 border border-militaryOrange/30 text-militaryOrange">RANK</span>
+                    <h3 id="profile-modal-name" class="font-orbitron font-black text-xl text-white mt-1 uppercase">CALLSIGN</h3>
+                </div>
+                <button onclick="toggleProfileModal(false)" class="text-[#7c8b9d] hover:text-white font-bold text-lg">&times;</button>
+            </div>
+            
+            <div class="space-y-2 text-xs mb-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-[#0c0e15] p-2 rounded border border-white/5">
+                        <span class="text-[9px] text-[#7c8b9d] block uppercase font-bold">Total CP</span>
+                        <span id="profile-cp" class="text-white font-orbitron font-bold text-sm">--</span>
+                        <span id="profile-cp-growth" class="text-[10px] block text-toxicGreen font-semibold mt-0.5">--</span>
+                    </div>
+                    <div class="bg-[#0c0e15] p-2 rounded border border-white/5">
+                        <span class="text-[9px] text-[#7c8b9d] block uppercase font-bold">Kills</span>
+                        <span id="profile-kills" class="text-toxicGreen font-orbitron font-bold text-sm">--</span>
+                        <span id="profile-kills-growth" class="text-[10px] block text-toxicGreen font-semibold mt-0.5">--</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#0c0e15] p-2.5 rounded border border-white/5 space-y-1.5">
+                    <span class="text-[9px] text-[#7c8b9d] block uppercase font-bold border-b border-white/5 pb-1">🚗 APC Configuration Squads</span>
+                    <div class="grid grid-cols-2 gap-1 text-[11px]">
+                        <div class="flex justify-between p-1 bg-white/5 rounded">
+                            <span class="text-[#7c8b9d]">1st APC:</span>
+                            <div class="text-right">
+                                <strong id="profile-apc1" class="text-militaryYellow font-orbitron block leading-none">--</strong>
+                                <span id="profile-apc1-growth" class="text-[9px] text-toxicGreen font-semibold block mt-0.5">--</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between p-1 bg-white/5 rounded">
+                            <span class="text-[#7c8b9d]">2nd APC:</span>
+                            <strong id="profile-apc2" class="text-bioCyan font-orbitron">--</strong>
+                        </div>
+                        <div class="flex justify-between p-1 bg-white/5 rounded">
+                            <span class="text-[#7c8b9d]">3rd APC:</span>
+                            <strong id="profile-apc3" class="text-[#cbd5e1] font-orbitron">--</strong>
+                        </div>
+                        <div class="flex justify-between p-1 bg-white/5 rounded">
+                            <span class="text-[#7c8b9d]">4th APC:</span>
+                            <strong id="profile-apc4" class="text-[#ad7a51] font-orbitron">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#121c16] p-2.5 rounded border border-toxicGreen/20">
+                    <span class="text-[9px] text-toxicGreen block uppercase font-bold">Current Duel Score</span>
+                    <span id="profile-duel" class="text-white font-orbitron font-black text-lg">--</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2" id="profile-action-container">
+                <!-- Calibrate action dynamically loaded -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Secure custom alert warnings dialog template -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[1000] flex justify-center items-center p-4 opacity-0 pointer-events-none transition-opacity duration-200" id="terminal-dialog">
+        <div class="bg-hudPanel border-2 border-[#2b1212] rounded-[20px] w-full max-w-[350px] p-5 shadow-[0_15px_40px_rgba(0,0,0,0.95)] transform scale-95 transition-transform duration-200" id="terminal-dialog-box">
+            <div class="font-orbitron text-[#ff4500] text-xs uppercase font-bold border-b border-[#2b1212] pb-2 mb-3 flex items-center gap-1.5" id="dialog-header-title">Uplink Active</div>
+            <div class="text-sm text-white mb-4 font-rajdhani" id="dialog-body-msg">Transmission...</div>
+            <div id="dialog-input-wrapper" class="hidden mb-4">
+                <input type="text" id="dialog-text-input" class="w-full bg-[#06080c] border border-[#2b1212] rounded-lg p-2 text-white font-rajdhani text-xs focus:outline-none focus:border-militaryOrange">
+            </div>
+            <div class="flex gap-2">
+                <button type="button" class="flex-1 bg-[#161c28] text-[#7c8b9d] text-xs font-bold font-rajdhani py-2 rounded-lg uppercase" onclick="dismissCustomModal(false)">Abort</button>
+                <button type="button" id="dialog-confirm-btn" class="flex-1 bg-militaryOrange text-black text-xs font-bold font-rajdhani py-2 rounded-lg uppercase" onclick="dismissCustomModal(true)">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Fighter calibration form modal -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[999] flex justify-center items-center p-4 opacity-0 pointer-events-none transition-opacity duration-200" id="enlist-fighter-modal">
+        <div class="bg-hudPanel border-2 border-[#1c2230] rounded-[20px] w-full max-w-[370px] p-5 shadow-[0_15px_40px_rgba(0,0,0,0.95)] max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-2 border-b border-[#1c2230] mb-3">
+                <span id="form-modal-title" class="font-orbitron text-xs font-bold text-militaryOrange uppercase">Track Fighter</span>
+                <button onclick="toggleEnlistModal(false)" class="text-[#7c8b9d] hover:text-white font-bold text-lg">&times;</button>
+            </div>
+            
+            <form id="enlistment-form" onsubmit="handleEnlistmentFormSubmit(event)" class="text-xs">
+                <input type="hidden" id="edit-fighter-id">
+                
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="col-span-2 flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">Callsign</label>
+                        <input type="text" id="form-name" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+                    
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">Duty Role</label>
+                        <select id="form-rank" class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none">
+                            <option value="R5">R5</option>
+                            <option value="R4">R4</option>
+                            <option value="R3">R3</option>
+                            <option value="R2">R2</option>
+                            <option value="R1">R1</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">Total CP (G)</label>
+                        <input type="number" id="form-cp" step="0.01" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">1st APC (G)</label>
+                        <input type="number" id="form-apc1" step="0.01" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">2nd APC (G)</label>
+                        <input type="number" id="form-apc2" step="0.01" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">3rd APC (G)</label>
+                        <input type="number" id="form-apc3" step="0.01" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">4th APC (G)</label>
+                        <input type="number" id="form-apc4" step="0.01" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-[#7c8b9d] font-semibold uppercase">Kills (M)</label>
+                        <input type="number" id="form-kills" step="0.1" required class="bg-[#06080c] border border-[#1c2230] rounded-md p-1.5 text-white focus:outline-none focus:border-militaryOrange">
+                    </div>
+
+                    <div class="col-span-2 flex flex-col gap-1">
+                        <label class="text-[10px] text-bioCyan font-semibold uppercase block border-b border-white/10 pb-1 mb-1" id="form-duel-label">Active Duel Score (M)</label>
+                        <input type="number" id="form-duel" step="1" required class="bg-[#06080c] border border-bioCyan rounded-md p-2 text-white font-bold font-orbitron focus:outline-none focus:border-militaryOrange">
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" class="flex-1 bg-[#182030] text-[#7c8b9d] text-xs font-bold font-rajdhani py-2.5 rounded-lg uppercase" onclick="toggleEnlistModal(false)">Cancel</button>
+                    <button type="submit" class="flex-1 bg-militaryOrange text-black text-xs font-bold font-rajdhani py-2.5 rounded-lg uppercase">Commit Updates</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="fixed top-5 right-5 z-[1100] flex flex-col gap-2" id="toast-container"></div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSynthesizedSound(type) {
+            try {
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+
+                if (type === 'beep') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'purr') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(55, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.1);
+                    osc.frequency.linearRampToValueAtTime(55, audioCtx.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'hiss') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'eat') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'catnip-giggle') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                }
+            } catch (e) {}
+        }
+
+        const PRESET_SURVIVORS = [
+            { 
+                id: "1", name: "ScratchMcGee", rank: "R5", total_cp: 8.26, apc1: 1.25, apc2: 1.10, apc3: 0.95, apc4: 0.80, kills_gain: 2.5, 
+                duels: { "Season_1_Week_1": 282, "Season_1_Week_2": 310 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 8.0, apc1: 1.20, kills: 2.0 },
+                    "Season_1_Week_2": { cp: 8.26, apc1: 1.25, kills: 2.5 }
+                }
+            },
+            { 
+                id: "2", name: "ClawWhore", rank: "R4", total_cp: 7.08, apc1: 1.12, apc2: 0.98, apc3: 0.85, apc4: 0.72, kills_gain: 3.2, 
+                duels: { "Season_1_Week_1": 185, "Season_1_Week_2": 210 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 6.8, apc1: 1.05, kills: 2.8 },
+                    "Season_1_Week_2": { cp: 7.08, apc1: 1.12, kills: 3.2 }
+                }
+            },
+            { 
+                id: "3", name: "AnarchyCat", rank: "R4", total_cp: 5.49, apc1: 0.94, apc2: 0.82, apc3: 0.70, apc4: 0.60, kills_gain: 0.5, 
+                duels: { "Season_1_Week_1": 95, "Season_1_Week_2": 110 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 5.2, apc1: 0.88, kills: 0.4 },
+                    "Season_1_Week_2": { cp: 5.49, apc1: 0.94, kills: 0.5 }
+                }
+            },
+            { 
+                id: "4", name: "PurrfectKill", rank: "R4", total_cp: 5.37, apc1: 1.16, apc2: 0.95, apc3: 0.80, apc4: 0.68, kills_gain: 0.8, 
+                duels: { "Season_1_Week_1": 140, "Season_1_Week_2": 120 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 5.3, apc1: 1.10, kills: 0.7 },
+                    "Season_1_Week_2": { cp: 5.37, apc1: 1.16, kills: 0.8 }
+                }
+            },
+            { 
+                id: "5", name: "MeowMixer", rank: "R1", total_cp: 5.04, apc1: 0.90, apc2: 0.75, apc3: 0.60, apc4: 0.50, kills_gain: 1.2, 
+                duels: { "Season_1_Week_1": 42, "Season_1_Week_2": 60 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.8, apc1: 0.85, kills: 1.0 },
+                    "Season_1_Week_2": { cp: 5.04, apc1: 0.90, kills: 1.2 }
+                }
+            },
+            { 
+                id: "6", name: "SleepyPaws", rank: "R4", total_cp: 5.00, apc1: 0.85, apc2: 0.72, apc3: 0.62, apc4: 0.48, kills_gain: 1.9, 
+                duels: { "Season_1_Week_1": 104, "Season_1_Week_2": 100 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.9, apc1: 0.80, kills: 1.7 },
+                    "Season_1_Week_2": { cp: 5.00, apc1: 0.85, kills: 1.9 }
+                }
+            },
+            { 
+                id: "7", name: "Grimezee", rank: "R3", total_cp: 4.48, apc1: 0.88, apc2: 0.78, apc3: 0.65, apc4: 0.55, kills_gain: 4.5, 
+                duels: { "Season_1_Week_1": 210, "Season_1_Week_2": 190 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.2, apc1: 0.80, kills: 4.0 },
+                    "Season_1_Week_2": { cp: 4.48, apc1: 0.88, kills: 4.5 }
+                }
+            },
+            { 
+                id: "8", name: "Mooshii", rank: "R3", total_cp: 6.12, apc1: 1.02, apc2: 0.90, apc3: 0.80, apc4: 0.70, kills_gain: 2.8, 
+                duels: { "Season_1_Week_1": 195, "Season_1_Week_2": 175 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 5.9, apc1: 0.95, kills: 2.5 },
+                    "Season_1_Week_2": { cp: 6.12, apc1: 1.02, kills: 2.8 }
+                }
+            },
+            { 
+                id: "9", name: "BioWhiskers", rank: "R1", total_cp: 3.82, apc1: 0.72, apc2: 0.65, apc3: 0.55, apc4: 0.45, kills_gain: 1.1, 
+                duels: { "Season_1_Week_1": 65, "Season_1_Week_2": 85 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 3.7, apc1: 0.68, kills: 0.9 },
+                    "Season_1_Week_2": { cp: 3.82, apc1: 0.72, kills: 1.1 }
+                }
+            },
+            { 
+                id: "10", name: "Catalyst", rank: "R3", total_cp: 4.90, apc1: 0.91, apc2: 0.80, apc3: 0.70, apc4: 0.60, kills_gain: 3.7, 
+                duels: { "Season_1_Week_1": 170, "Season_1_Week_2": 220 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.5, apc1: 0.85, kills: 3.0 },
+                    "Season_1_Week_2": { cp: 4.90, apc1: 0.91, kills: 3.7 }
+                }
+            },
+            { 
+                id: "11", name: "SpartanCat", rank: "R2", total_cp: 4.15, apc1: 0.80, apc2: 0.70, apc3: 0.60, apc4: 0.50, kills_gain: 1.6, 
+                duels: { "Season_1_Week_1": 110, "Season_1_Week_2": 130 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.0, apc1: 0.75, kills: 1.4 },
+                    "Season_1_Week_2": { cp: 4.15, apc1: 0.80, kills: 1.6 }
+                }
+            },
+            { 
+                id: "12", name: "Avenger", rank: "R3", total_cp: 4.58, apc1: 0.89, apc2: 0.78, apc3: 0.68, apc4: 0.58, kills_gain: 2.2, 
+                duels: { "Season_1_Week_1": 150, "Season_1_Week_2": 160 },
+                snapshots: {
+                    "Season_1_Week_1": { cp: 4.4, apc1: 0.85, kills: 2.0 },
+                    "Season_1_Week_2": { cp: 4.58, apc1: 0.89, kills: 2.2 }
+                }
+            }
+        ];
+
+        const RANDOM_CAT_DIALOGUES = [
+            "Las armas requieren espíritu, como las letras.",
+            "A sharp blade and a wandering soul, some paths are meant to be walked alone.",
+            "To err is human, to forgive divine.",
+            "Who runs the world? Girls!",
+            "Curiosity doesn't kill every cat.",
+            "Death is just a masterpiece of life.",
+            "Ever seen my wife? She is the definition of beauty.",
+            "Understand a Pirate, and Boom you have become one yourself.",
+            "Shh, Quiet, I was talking to me Parrot, not you.",
+            "Maybe one day I will hang up my sword.",
+            "Zombies, just like viruses they all got a weak point.",
+            "Each punch gives you a choice, Fight or Fold.",
+            "Need a ride? Better be handled to rush cutie.",
+            "Smiles and Luck always come together.",
+            "I'll patch up this world, just like I do with these machines.",
+            "This crazy apocalypse is so much fun.",
+            "You in for a wild ride?",
+            "Wanna see my upgrade list? Number 37 is a secret.",
+            "All tuned up, now let's have some fun.",
+            "Mother nature has got something to say.",
+            "Wind and Arrows perfect combo.",
+            "Rule number 1, Patience.",
+            "Arghh, can't breathe, this mask definitely needs a tune up.",
+            "Ryan - 29, Hobbies? Nothing special really.",
+            "My last candy, Its yours now."
+        ];
+
+        let survivors = [];
+        let registeredCallsign = "";
+        let currentLeague = "Season 1";
+        let currentWeek = "Week 2";
+        let currentOpponent = "RRH Alliance";
+        let activeSimulatorRole = "Admin"; 
+        let activeSimulatedId = "";
+
+        // Interactive 6-day check state
+        let duelDaysState = [true, true, false, false, false, false]; 
+
+        let duelLogsHistory = [
+            { id: "hist-1", league: "Season 1", week: "Week 1", opponent: "RRH Alliance", timestamp: 1774900000000, logs: { "1": 282, "2": 185, "3": 95, "4": 140, "5": 42, "6": 104, "7": 210, "8": 195, "9": 65, "10": 170, "11": 110, "12": 150 } }
+        ];
+
+        let modalResolveCallback = null;
+        let isModalInPromptMode = false;
+        let isBatchSaving = false;
+
+        // Evolved Cats configurations
+        const CAT_MASCOTS = [
+            { id: 'cat-toxic', name: 'Scratchy', color: '#39ff14', secondary: '#0d111b', pattern: 'neon-toxic', role: 'Vanguard Alpha', quotes: ["DUEL WEEK ACTIVE!", "SURRENDER IS AN ILLUSION!", "TARGET LOCKED!", "LET'S SHRED THEM!"] },
+            { id: 'cat-blood', name: 'Claw', color: '#ff4500', secondary: '#16121a', pattern: 'fire-tuxedo', role: 'Assault Specialist', quotes: ["PREPARE THE CLAWS!", "GIVE ME THE SCORES!", "ZOMBIES INCOMING!", "S199 SECURED!"] },
+            { id: 'cat-calico', name: 'Mooshi', color: '#ffaa00', secondary: '#18120d', pattern: 'calico-tiger', role: 'Intel Scout', quotes: ["SCANNING SECTORS...", "FKIT ON TOP!", "RADAR LOOKS CLEAR!", "CHILLIN ON THE HUD!"] },
+            { id: 'cat-cyber', name: 'BioWhiskers', color: '#00f0ff', secondary: '#0e181c', pattern: 'cyber-hazard', role: 'Cyber Healer', quotes: ["BIO-UPLINK RUNNING!", "STABLE FEED DETECTED!", "PURR PROTOCOL SAFE!", "COMPILER LOCKED!"] }
+        ];
+
+        class LiveKittenActor {
+            constructor(config) {
+                this.id = config.id;
+                this.name = config.name;
+                this.color = config.color;
+                this.secondary = config.secondary;
+                this.pattern = config.pattern;
+                this.role = config.role;
+                this.quotes = config.quotes;
+
+                this.x = 40;                      // Sandbox coordinates relative
+                this.y = 80;                      // Sandbox coordinates relative
+                this.vx = 0;                      // Velocity X vector
+                this.vy = 0;                      // Velocity Y vector
+                this.state = 'idle';              // state triggers
+                this.direction = Math.random() > 0.5 ? 1 : -1;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                
+                this.affection = 0;
+                this.stateTimer = 0;
+                this.bubbleTimer = 0;
+                this.element = null;
+                this.isDragging = false;
+                this.dragOffset = { x: 0, y: 0 };
+                this.dropThroughTimer = 0; // Drop through platforms
+
+                this.dialogueActiveTimer = 0;
+                this.dialogueCooldown = Math.floor(Math.random() * 67) + 333; // ~10 to 12s
+            }
+
+            render() {
+                const isFlipped = this.direction === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+                const mainColor = this.color;
+                const secondaryColor = this.secondary;
+                const pattern = this.pattern;
+                const eyeNormalColor = this.color === '#00f0ff' ? '#39ff14' : '#00f0ff';
+                
+                let patternMarkup = '';
+                if (pattern === 'calico-tiger') {
+                    patternMarkup = `
+                        <path d="M14 26 L18 25 M14 29 L19 28" stroke="${mainColor}" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M46 26 L42 25 M46 29 L41 28" stroke="${mainColor}" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M26 15 L28 13 M34 15 L32 13" stroke="${mainColor}" stroke-width="1.5" stroke-linecap="round"/>
+                    `;
+                } else if (pattern === 'fire-tuxedo') {
+                    patternMarkup = `
+                        <polygon points="30,36 21,46 39,46" fill="#f1f5f9" opacity="0.9"/>
+                        <polygon points="30,24 25,29 35,29" fill="#f1f5f9" opacity="0.9"/>
+                    `;
+                } else if (pattern === 'cyber-hazard') {
+                    patternMarkup = `
+                        <path d="M22 36 L18 36 L18 42 M38 36 L42 36 L42 42" fill="none" stroke="${mainColor}" stroke-width="1" opacity="0.8"/>
+                        <circle cx="18" cy="42" r="1.5" fill="${mainColor}"/>
+                        <circle cx="42" cy="42" r="1.5" fill="${mainColor}"/>
+                    `;
+                } else {
+                    patternMarkup = `
+                        <path d="M12 28 L17 28 M48 28 L43 28" stroke="${mainColor}" stroke-width="1" opacity="0.7"/>
+                    `;
+                }
+
+                let eyesMarkup = '';
+                if (this.id === 'cat-cyber') {
+                    eyesMarkup = `
+                        <rect class="cat-eye-cyber" x="20" y="21" width="20" height="4" rx="2" fill="${mainColor}" filter="drop-shadow(0 0 3px ${mainColor})"/>
+                    `;
+                } else {
+                    eyesMarkup = `
+                        <ellipse class="cat-eye-cyber" cx="24" cy="23" rx="3.5" ry="2" fill="url(#cyberEyeGlow-${this.id})" />
+                        <ellipse class="cat-eye-normal" cx="36" cy="23" rx="3" ry="1.5" fill="${eyeNormalColor}" stroke="${mainColor}" stroke-width="0.5" />
+                    `;
+                }
+
+                const svgContent = `
+                    <svg viewBox="0 0 60 60" class="w-full h-full pointer-events-none cat-actor-svg">
+                        <defs>
+                            <radialGradient id="cyberEyeGlow-${this.id}" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#fff" />
+                                <stop offset="100%" stop-color="${mainColor}" />
+                            </radialGradient>
+                            <linearGradient id="cyberTailGrad-${this.id}" x1="0%" y1="100%" x2="0%" y2="0%">
+                                <stop offset="0%" stop-color="${mainColor}" />
+                                <stop offset="100%" stop-color="#111" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="30" cy="30" r="27" fill="rgba(6,8,12,0.92)" stroke="${mainColor}" stroke-width="1.5" opacity="0.95"/>
+                        <g class="cat-breath-group">
+                            <path class="cat-tail-organic" d="M16 42 Q10 28 14 18 T11 8" fill="none" stroke="url(#cyberTailGrad-${this.id})" stroke-width="4.5" stroke-linecap="round" />
+                            <g class="leg-l" style="transform-origin: 19px 48px;">
+                                <ellipse cx="19" cy="48" rx="4" ry="2.5" fill="#080a0f" stroke="${mainColor}" stroke-width="1.5" />
+                            </g>
+                            <g class="leg-r" style="transform-origin: 41px 48px;">
+                                <ellipse cx="41" cy="48" rx="4" ry="2.5" fill="#080a0f" stroke="${mainColor}" stroke-width="1.5" />
+                            </g>
+                            <ellipse cx="30" cy="40" rx="13" ry="10" fill="${secondaryColor}" stroke="${mainColor}" stroke-width="1.5" class="actor-body" />
+                            ${patternMarkup}
+                            <g class="cat-head-group">
+                                <polygon class="cat-ear-l" points="16,22 8,5 23,13" fill="#0f121b" stroke="${mainColor}" stroke-width="1.5" />
+                                <polygon class="cat-ear-r" points="44,22 52,5 37,13" fill="#0f121b" stroke="${mainColor}" stroke-width="1.5" />
+                                <polygon points="17,19 11,8 21,14" fill="#660000" />
+                                <polygon points="43,19 49,8 39,14" fill="#660000" />
+                                <circle cx="30" cy="24" r="13" fill="#151924" stroke="${mainColor}" stroke-width="1.5" />
+                                ${eyesMarkup}
+                                <ellipse class="eye-closed" cx="24" cy="23" rx="3.5" ry="0.5" fill="${mainColor}" style="display:none;"/>
+                                <ellipse class="eye-closed" cx="36" cy="23" rx="3" ry="0.5" fill="${eyeNormalColor}" style="display:none;"/>
+                                <g class="eye-scared" style="display:none;">
+                                    <circle cx="24" cy="23" r="4.5" fill="#fff" stroke="#ff0000" stroke-width="0.5"/>
+                                    <circle cx="24" cy="23" r="1.5" fill="#000"/>
+                                    <circle cx="36" cy="23" r="4.5" fill="#fff" stroke="#ff0000" stroke-width="0.5"/>
+                                    <circle cx="36" cy="23" r="1.5" fill="#000"/>
+                                </g>
+                                <path d="M24 16 L24 30" stroke="#660000" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+                                <polygon points="30,27 28,25 32,25" fill="${mainColor}" />
+                                <path d="M21 29 L14 28 M21 31 L12 32" stroke="#7c8b9d" stroke-width="1" />
+                                <path d="M39 29 L46 28 M39 31 L48 32" stroke="#7c8b9d" stroke-width="1" />
+                            </g>
+                        </g>
+                    </svg>
+                    <div class="startle-alert absolute -top-4 left-1/2 -translate-x-1/2 text-red-500 font-black text-sm drop-shadow-[0_0_4px_red] pointer-events-none opacity-0 select-none">❗</div>
+                `;
+
+                if (this.element) {
+                    this.element.innerHTML = `
+                        <div id="bubble-${this.id}" class="actor-bubble">MEOW!</div>
+                        <div class="cat-render-wrapper w-full h-full" style="transform: ${isFlipped};">
+                            ${svgContent}
+                        </div>
+                    `;
+                }
+            }
+
+            speak(text) {
+                const bubble = document.getElementById(`bubble-${this.id}`);
+                if(bubble) {
+                    bubble.innerText = text;
+                    bubble.classList.add('active');
+                    this.bubbleTimer = 167; // exactly 5 seconds (167 ticks * 30ms = 5010ms)
+                }
+            }
+
+            setBehavior(newState) {
+                this.state = newState;
+                this.stateTimer = Math.floor(Math.random() * 40) + 20; // behavior ticks
+                
+                if (this.element) {
+                    this.element.className = `cat-actor state-${newState}`;
+                }
+                
+                if(newState === 'sleeping') {
+                    this.speak("Zzz...");
+                } else if(newState === 'startled') {
+                    this.targetY = 20; // Jumps up
+                    this.speak("HISSS! 🙀");
+                    playSynthesizedSound('hiss');
+                    if (this.element) {
+                        const mark = this.element.querySelector('.startle-alert');
+                        if(mark) {
+                            mark.style.opacity = '1';
+                            setTimeout(() => { if(mark) mark.style.opacity = '0'; }, 1000);
+                        }
+                    }
+                } else if(newState === 'purr') {
+                    this.speak("Purrr... ❤️");
+                    playSynthesizedSound('purr');
+                } else if(newState === 'eating') {
+                    this.speak("CHOMP 🐟");
+                    this.stateTimer = 100; // 3-second eating cooldown (100 ticks)
+                    playSynthesizedSound('eat');
+                } else if(newState === 'catnip-high') {
+                    const lines = ["ZOOM ZOOM ZOOM! 🏎️", "THE WALLS ARE SPINNING! 🌀", "FEELIN' SPECTACULAR! 🤪", "MAX OVERDRIVE! 🍃🔋"];
+                    const randomLine = lines[Math.floor(Math.random() * lines.length)];
+                    this.speak(randomLine);
+                    playSynthesizedSound('catnip-giggle');
+                }
+            }
+        }
+
+        let liveKittens = [];
+        let isLaserActive = false;
+        let laserPosition = { x: 0, y: 0 };
+        let spawnedFoods = []; // multi fish collection
+        let catnipActive = false;
+        let catnipTimer = null;
+
+        function navigateView(viewName) {
+            playSynthesizedSound('beep');
+            toggleSidebarMenu(false);
+            
+            const views = ['view-dashboard', 'view-roster', 'view-history', 'view-batch-upload', 'view-kitten-guide'];
+            views.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const targetView = document.getElementById(`view-${viewName}`);
+            if (targetView) targetView.classList.remove('hidden');
+
+            const sandboxWrapper = document.getElementById('sandbox-wrapper');
+            if (sandboxWrapper && targetView) {
+                targetView.appendChild(sandboxWrapper);
+            }
+
+            if (viewName === 'dashboard') {
+                renderAllHUD();
+                moveCatsToActiveView('view-dashboard');
+            } else if (viewName === 'roster') {
+                rebuildRosterTable();
+                moveCatsToActiveView('view-roster');
+            } else if (viewName === 'history') {
+                renderDuelLogsHistoryPage();
+                moveCatsToActiveView('view-history');
+            } else if (viewName === 'upload') {
+                openSundayUploadPortalPage();
+                moveCatsToActiveView('view-batch-upload');
+            } else if (viewName === 'kitten-guide') {
+                moveCatsToActiveView('view-kitten-guide');
+            }
+        }
+
+        function getSandboxBottom() {
+            const activeView = document.querySelector('.app-content:not(.hidden)');
+            const sandbox = document.getElementById('playground-field');
+            if (!activeView) return 800;
+            if (!sandbox) return activeView.scrollHeight;
+            
+            let sandboxTop = sandbox.offsetTop;
+            let parent = sandbox.offsetParent;
+            while (parent && parent !== activeView && !parent.classList.contains('phone-wrapper')) {
+                sandboxTop += parent.offsetTop;
+                parent = parent.offsetParent;
+            }
+            return sandboxTop + sandbox.offsetHeight;
+        }
+
+        // Dynamically move playground layout overlay to active view
+        function moveCatsToActiveView(viewId) {
+            const container = document.getElementById(viewId);
+            if (!container) return;
+            
+            let sandbox = container.querySelector('.playground-container-overlay');
+            if(!sandbox) {
+                document.querySelectorAll('.playground-container-overlay').forEach(el => el.remove());
+                
+                sandbox = document.createElement('div');
+                sandbox.id = 'playground-field-overlay';
+                sandbox.className = 'playground-container-overlay absolute top-0 left-0 w-full min-h-full pointer-events-none z-40';
+                container.appendChild(sandbox);
+                
+                const dot = document.createElement('div');
+                dot.id = 'laser-dot';
+                dot.className = 'laser-pointer-dot';
+                sandbox.appendChild(dot);
+
+                const reticle = document.createElement('div');
+                reticle.id = 'laser-reticle';
+                reticle.className = 'laser-reticle';
+                sandbox.appendChild(reticle);
+                
+                // Mount felines inside active view overlay
+                liveKittens.forEach(actor => {
+                    const catDiv = document.createElement('div');
+                    catDiv.id = actor.id;
+                    catDiv.className = `cat-actor state-${actor.state}`;
+                    catDiv.style.pointerEvents = 'auto';
+                    sandbox.appendChild(catDiv);
+                    
+                    actor.element = catDiv;
+                    actor.render();
+                    setupActorDragListeners(actor);
+                });
+            }
+            
+            setTimeout(() => {
+                const currentOverlay = container.querySelector('.playground-container-overlay');
+                if(currentOverlay) {
+                    currentOverlay.style.height = getSandboxBottom() + 'px';
+                }
+                recalculateUIPlatformHeights();
+            }, 300);
+        }
+
+        // Platform coordinates scanning solver
+        let activeUIPlatforms = [];
+        function recalculateUIPlatformHeights() {
+            activeUIPlatforms = [];
+            const activeView = document.querySelector('.app-content:not(.hidden)');
+            if(!activeView) return;
+
+            const scrollWidth = activeView.clientWidth;
+            const sandboxBottom = getSandboxBottom();
+
+            // Base ground floor plat
+            activeUIPlatforms.push({
+                left: 0,
+                right: scrollWidth,
+                top: sandboxBottom - 75,
+                bottom: sandboxBottom,
+                name: 'Outpost Floor'
+            });
+
+            // Scan card panels
+            const querySelectors = [
+                '.app-content:not(.hidden) .bg-hudPanel',
+                '.app-content:not(.hidden) select',
+                '.app-content:not(.hidden) table tr',
+                '.app-content:not(.hidden) input',
+                '.app-content:not(.hidden) #carousel-weekly > div',
+                '.app-content:not(.hidden) #carousel-season > div'
+            ];
+
+            querySelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    if(el.offsetWidth === 0 || el.offsetHeight === 0) return;
+
+                    let top = el.offsetTop;
+                    let left = el.offsetLeft;
+                    let parent = el.offsetParent;
+
+                    while(parent && parent !== activeView && !parent.classList.contains('phone-wrapper')) {
+                        top += parent.offsetTop;
+                        left += parent.offsetLeft;
+                        parent = parent.offsetParent;
+                    }
+
+                    activeUIPlatforms.push({
+                        left: left,
+                        right: left + el.offsetWidth,
+                        top: top,
+                        bottom: top + el.offsetHeight,
+                        name: el.tagName + ' Element'
+                    });
+                });
+            });
+        }
+
+        function loadOutpostState() {
+            const savedSurvivors = localStorage.getItem('fkit_apoc_survivors_v3');
+            if (savedSurvivors) survivors = JSON.parse(savedSurvivors);
+            else { survivors = [...PRESET_SURVIVORS]; saveOutpostState(); }
+
+            currentLeague = localStorage.getItem('fkit_active_league') || "Season 1";
+            currentWeek = localStorage.getItem('fkit_active_week') || "Week 2";
+            currentOpponent = localStorage.getItem('fkit_active_opponent') || "RRH Alliance";
+
+            const savedHistory = localStorage.getItem('fkit_active_history_v3');
+            if (savedHistory) duelLogsHistory = JSON.parse(savedHistory);
+            else localStorage.setItem('fkit_active_history_v3', JSON.stringify(duelLogsHistory));
+
+            registeredCallsign = localStorage.getItem('fkit_callsign') || "";
+            if (registeredCallsign) {
+                document.getElementById('auth-signature-btn').innerHTML = `🐾 Callsign Bound: <strong>${registeredCallsign}</strong>`;
+                const match = survivors.find(k => k.name.toLowerCase() === registeredCallsign.toLowerCase());
+                if (match) {
+                    activeSimulatorRole = match.rank;
+                    activeSimulatedId = match.id;
+                    document.getElementById('role-simulator-dropdown').value = match.rank;
+                }
+            }
+            evaluateClearances();
+        }
+
+        function saveOutpostState() { localStorage.setItem('fkit_apoc_survivors_v3', JSON.stringify(survivors)); }
+
+        function evaluateClearances() {
+            const hasOfficerPerms = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+            const enlistBtns = [document.getElementById('enlist-btn'), document.getElementById('enlist-btn-dash')].filter(Boolean);
+            const navUploadBtn = document.getElementById('nav-upload-btn');
+            const dashUploadBtn = document.getElementById('dashboard-upload-btn');
+            const noticeLabel = document.getElementById('admin-notice-label');
+            const editMatchupBtn = document.getElementById('btn-edit-matchup');
+
+            if (hasOfficerPerms) {
+                enlistBtns.forEach(b => b.classList.remove('hidden'));
+                if (navUploadBtn) navUploadBtn.classList.remove('hidden');
+                if (dashUploadBtn) dashUploadBtn.classList.remove('hidden');
+                if (noticeLabel) noticeLabel.classList.add('hidden');
+                if (editMatchupBtn) editMatchupBtn.classList.remove('hidden');
+            } else {
+                enlistBtns.forEach(b => b.classList.add('hidden'));
+                if (navUploadBtn) navUploadBtn.classList.add('hidden');
+                if (dashUploadBtn) dashUploadBtn.classList.add('hidden');
+                if (noticeLabel) noticeLabel.classList.remove('hidden');
+                if (editMatchupBtn) editMatchupBtn.classList.add('hidden');
+            }
+        }
+
+        function swapOperationalRole() {
+            playSynthesizedSound('beep');
+            const dropdownVal = document.getElementById('role-simulator-dropdown').value;
+            activeSimulatorRole = dropdownVal;
+            
+            if(dropdownVal === "Admin") {
+                activeSimulatedId = ""; showNotification("Dev Override Active.");
+            } else {
+                const match = survivors.find(k => k.rank === dropdownVal);
+                activeSimulatedId = match ? match.id : "";
+                showNotification(`${dropdownVal} Permissions Applied.`);
+            }
+            evaluateClearances();
+            if(!document.getElementById('view-roster').classList.contains('hidden')) rebuildRosterTable();
+            renderAllHUD();
+        }
+
+        function parseApocUnit(value) { return value < 1.0 ? (value * 1000).toFixed(0) + "M" : value.toFixed(2) + "G"; }
+        function parseKillsUnit(value) { return value < 1.0 ? (value * 1000).toFixed(0) + "K" : value.toFixed(1) + "M"; }
+
+        function toggleDuelDayState(idx) {
+            const hasOfficerPerms = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+            if (!hasOfficerPerms) {
+                showNotification("Warning: Clearance lock. Standard survivors cannot toggle win states.", false);
+                return;
+            }
+            playSynthesizedSound('beep');
+            duelDaysState[idx] = !duelDaysState[idx];
+            renderAllHUD();
+            showNotification("Day combat record adjusted.");
+        }
+
+        function renderAllHUD() {
+            document.getElementById('league-week-header').innerText = `⚔️ ${currentLeague} • ${currentWeek}`;
+            document.getElementById('matchup-vs-alliance').innerText = `VS. ${currentOpponent}`;
+
+            const checklistContainer = document.getElementById('duel-day-checklist');
+            const weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            
+            let totalPoints = 0;
+            let winsCount = 0;
+            
+            if (checklistContainer) {
+                checklistContainer.innerHTML = weekdays.map((day, idx) => {
+                    const isWin = duelDaysState[idx];
+                    const dayWeight = (idx === 5) ? 4 : 2; // Sat is 4 pts, Mon-Fri is 2 pts
+                    if (isWin) {
+                        totalPoints += dayWeight;
+                        winsCount++;
+                    }
+                    
+                    const icon = isWin ? '✔️' : '❌';
+                    const colorClass = isWin ? 'text-toxicGreen border-toxicGreen/30 bg-toxicGreen/5' : 'text-zombieBlood border-zombieBlood/30 bg-zombieBlood/5';
+                    
+                    return `
+                        <div onclick="toggleDuelDayState(${idx})" class="cursor-pointer border ${colorClass} p-1.5 rounded-lg flex flex-col items-center justify-center text-center transition-all">
+                            <span class="text-[9px] font-bold text-white tracking-widest">${day}</span>
+                            <span class="text-xs my-0.5">${icon}</span>
+                            <span class="text-[8px] opacity-80 font-bold">${dayWeight} PTS</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('matchup-points-banner').innerText = `Points: ${totalPoints} / 14`;
+            
+            const badge = document.getElementById('matchup-outcome-badge');
+            if (badge) {
+                if (winsCount >= 4) {
+                    badge.innerText = "⭐ VICTORY SECURED";
+                    badge.className = "text-[10px] font-extrabold font-orbitron tracking-widest uppercase bg-toxicGreen/30 border border-toxicGreen text-toxicGreen px-2 py-0.5 rounded";
+                } else {
+                    badge.innerText = "BATTLE ACTIVE";
+                    badge.className = "text-[10px] font-extrabold font-orbitron tracking-widest uppercase bg-zombieBlood/30 border border-zombieBlood text-white px-2 py-0.5 rounded";
+                }
+            }
+
+            document.getElementById('agg-total-members').innerText = survivors.length;
+            if(survivors.length > 0) {
+                const sortedCP = survivors.map(s => s.total_cp).sort((a,b)=>a-b);
+                const mid = Math.floor(sortedCP.length/2);
+                document.getElementById('agg-median-cp').innerText = parseApocUnit(sortedCP[mid]);
+                
+                const avgApc = survivors.reduce((s,k)=>s+k.apc1,0) / survivors.length;
+                document.getElementById('agg-avg-apc').innerText = parseApocUnit(avgApc);
+                
+                const tKills = survivors.reduce((s,k)=>s+k.kills_gain,0);
+                document.getElementById('agg-total-kills').innerText = parseKillsUnit(tKills);
+            }
+
+            renderLeaderboards();
+        }
+
+        function getTop10(array, valueExtractor) {
+            return [...array].sort((a,b) => valueExtractor(b) - valueExtractor(a)).slice(0, 10);
+        }
+
+        function generateLeaderboardCard(titleHTML, data, valueFormatter) {
+            const rows = data.map((k, idx) => {
+                const rankColors = ["text-[#ffaa00]", "text-[#cbd5e1]", "text-[#ad7a51]"];
+                const rColor = rankColors[idx] || "text-[#7c8b9d]";
+                const valStr = valueFormatter(k);
+                return `
+                    <div class="flex justify-between items-center text-xs py-1 border-b border-white/5 last:border-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-orbitron font-black w-4 text-center ${rColor}">${idx+1}</span>
+                            <span class="text-white font-semibold">${k.name}</span>
+                        </div>
+                        <span class="font-orbitron font-bold text-bioCyan">${valStr}</span>
+                    </div>`;
+            }).join('');
+
+            return `
+                <div class="min-w-[85%] sm:min-w-[70%] snap-center bg-gradient-to-b from-[#11141f] to-[#07090f] border border-[#1d2538] rounded-xl p-3 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-[2px] before:bg-gradient-to-r before:from-militaryOrange before:via-transparent before:to-militaryOrange flex-shrink-0">
+                    <h3 class="font-orbitron font-bold text-[11px] uppercase mb-2 text-white flex items-center justify-between border-b border-white/10 pb-2">
+                        ${titleHTML}
+                    </h3>
+                    <div class="flex flex-col gap-1">
+                        ${rows}
+                    </div>
+                </div>`;
+        }
+
+        function getPreviousWeekKey(currentKey) {
+            const match = currentKey.match(/Season_(\d+)_Week_(\d+)/);
+            if (!match) return null;
+            const season = parseInt(match[1], 10);
+            const week = parseInt(match[2], 10);
+            if (week > 1) {
+                return `Season_${season}_Week_${week - 1}`;
+            } else if (season > 1) {
+                return `Season_${season - 1}_Week_4`;
+            }
+            return null;
+        }
+
+        function renderLeaderboards() {
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            const prevKey = getPreviousWeekKey(activeKey);
+            const wCarousel = document.getElementById('carousel-weekly');
+            const sCarousel = document.getElementById('carousel-season');
+
+            if (!wCarousel || !sCarousel) return;
+
+            // 1. Last Week Duel Scores
+            const topLastWeekDuels = getTop10(survivors, s => s.duels[activeKey] || 0);
+
+            // 2. Weekly Kills Growth
+            const topKillsGrowth = getTop10(survivors, s => {
+                const cur = s.snapshots && s.snapshots[activeKey] ? s.snapshots[activeKey].kills : s.kills_gain;
+                const prev = s.snapshots && prevKey && s.snapshots[prevKey] ? s.snapshots[prevKey].kills : 0;
+                return Math.max(0, cur - prev);
+            });
+
+            // 3. Weekly Total CP Growth
+            const topCpGrowth = getTop10(survivors, s => {
+                const cur = s.snapshots && s.snapshots[activeKey] ? s.snapshots[activeKey].cp : s.total_cp;
+                const prev = s.snapshots && prevKey && s.snapshots[prevKey] ? s.snapshots[prevKey].cp : 0;
+                return Math.max(0, cur - prev);
+            });
+
+            // 4. Weekly APC1 Growth
+            const topApc1Growth = getTop10(survivors, s => {
+                const cur = s.snapshots && s.snapshots[activeKey] ? s.snapshots[activeKey].apc1 : s.apc1;
+                const prev = s.snapshots && prevKey && s.snapshots[prevKey] ? s.snapshots[prevKey].apc1 : 0;
+                return Math.max(0, cur - prev);
+            });
+
+            wCarousel.innerHTML = 
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-militaryYellow">⚔️</span> Last Week Duel</span>`, topLastWeekDuels, k => `${k.duels[activeKey]||0}M`) +
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-toxicGreen">☠️</span> Weekly Kills Growth</span>`, topKillsGrowth, k => `+${parseKillsUnit(k.kills_gain - (k.snapshots && prevKey && k.snapshots[prevKey] ? k.snapshots[prevKey].kills : 0))}`) +
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-bioCyan">⚡</span> Weekly CP Growth</span>`, topCpGrowth, k => `+${parseApocUnit(k.total_cp - (k.snapshots && prevKey && k.snapshots[prevKey] ? k.snapshots[prevKey].cp : 0))}`) +
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-militaryOrange">🎖️</span> Weekly APC1 Growth</span>`, topApc1Growth, k => `+${parseApocUnit(k.apc1 - (k.snapshots && prevKey && k.snapshots[prevKey] ? k.snapshots[prevKey].apc1 : 0))}`);
+
+            // All-Time Live Standings
+            const topSeasonDuels = getTop10(survivors, s => Object.values(s.duels).reduce((a,b)=>a+b, 0));
+            const topCP = getTop10(survivors, s => s.total_cp);
+            const topAPC = getTop10(survivors, s => s.apc1);
+
+            sCarousel.innerHTML = 
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-militaryYellow">👑</span> All-Time Duel Standings</span>`, topSeasonDuels, k => `${Object.values(k.duels).reduce((a,b)=>a+b, 0)}M`) +
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-bioCyan">🔋</span> All-Time Total CP</span>`, topCP, k => parseApocUnit(k.total_cp)) +
+                generateLeaderboardCard(`<span class="flex items-center gap-1"><span class="text-militaryOrange">🚀</span> All-Time APC1 Power</span>`, topAPC, k => parseApocUnit(k.apc1));
+        }
+
+        function rebuildRosterTable() {
+            const tbody = document.getElementById('roster-table-body');
+            const search = document.getElementById('roster-search-field').value.toLowerCase();
+            const sort = document.getElementById('roster-sort-selector').value;
+            const rankFilter = document.getElementById('roster-rank-filter').value;
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+
+            let filtered = survivors.filter(k => {
+                const matchesSearch = k.name.toLowerCase().includes(search);
+                const matchesRank = rankFilter === "ALL" || k.rank === rankFilter;
+                return matchesSearch && matchesRank;
+            });
+            
+            if(sort === "duel_desc") filtered.sort((a,b) => (b.duels[activeKey]||0) - (a.duels[activeKey]||0));
+            else if(sort === "cp_desc") filtered.sort((a,b) => b.total_cp - a.total_cp);
+            else if(sort === "apc_desc") filtered.sort((a,b) => b.apc1 - a.apc1);
+            else if(sort === "apc2_desc") filtered.sort((a,b) => (b.apc2||0) - (a.apc2||0));
+            else if(sort === "kills_desc") filtered.sort((a,b) => b.kills_gain - a.kills_gain);
+            else if(sort === "name_asc") filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+            tbody.innerHTML = filtered.map(k => {
+                const bge = k.rank==="R5" ? "text-militaryYellow" : k.rank==="R4" ? "text-militaryOrange" : "text-bioCyan";
+                return `
+                <tr class="hover:bg-hudHover cursor-pointer border-b border-white/5 text-xs transition-colors" onclick="triggerFighterProfileModal('${k.id}')">
+                    <td class="p-2 font-bold text-white">${k.name}</td>
+                    <td class="p-2 font-bold ${bge}">${k.rank}</td>
+                    <td class="p-2 text-bioCyan font-orbitron">${parseApocUnit(k.total_cp)}</td>
+                    <td class="p-2 font-orbitron">${parseApocUnit(k.apc1)}</td>
+                    <td class="p-2 font-orbitron text-bioCyan">${parseApocUnit(k.apc2 || 0)}</td>
+                    <td class="p-2 text-right text-militaryOrange font-orbitron">${parseKillsUnit(k.kills_gain)}</td>
+                    <td class="p-2 text-right text-militaryYellow font-orbitron font-bold">${k.duels[activeKey]||0}M</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function toggleSidebarMenu(open) {
+            playSynthesizedSound('beep');
+            const d = document.getElementById('sidebar-menu-drawer');
+            if(open) d.classList.add('active'); else d.classList.remove('active');
+        }
+
+        function toggleEnlistModal(open) {
+            playSynthesizedSound('beep');
+            const m = document.getElementById('enlist-fighter-modal');
+            if(open) m.classList.remove('opacity-0', 'pointer-events-none');
+            else m.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function toggleProfileModal(open) {
+            playSynthesizedSound('beep');
+            const m = document.getElementById('fighter-profile-modal');
+            if(open) m.classList.remove('opacity-0', 'pointer-events-none');
+            else m.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function triggerEnlistModal() {
+            document.getElementById('enlistment-form').reset();
+            document.getElementById('edit-fighter-id').value = "";
+            document.getElementById('form-modal-title').innerText = "Enlist Fighter";
+            document.getElementById('form-name').disabled = false;
+            document.getElementById('form-rank').disabled = false;
+            
+            const isOfficer = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+            const inputDuel = document.getElementById('form-duel');
+            if (!isOfficer) {
+                inputDuel.disabled = true;
+                inputDuel.classList.add('opacity-50');
+            } else {
+                inputDuel.disabled = false;
+                inputDuel.classList.remove('opacity-50');
+            }
+
+            toggleEnlistModal(true);
+        }
+
+        function triggerFighterProfileModal(id) {
+            const k = survivors.find(s => s.id === id);
+            if(!k) return;
+
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            const prevKey = getPreviousWeekKey(activeKey);
+            
+            document.getElementById('profile-modal-name').innerText = k.name;
+            document.getElementById('profile-modal-rank').innerText = k.rank;
+            document.getElementById('profile-cp').innerText = parseApocUnit(k.total_cp);
+            document.getElementById('profile-kills').innerText = parseKillsUnit(k.kills_gain);
+            document.getElementById('profile-apc1').innerText = parseApocUnit(k.apc1);
+            document.getElementById('profile-apc2').innerText = parseApocUnit(k.apc2 || 0);
+            document.getElementById('profile-apc3').innerText = parseApocUnit(k.apc3 || 0);
+            document.getElementById('profile-apc4').innerText = parseApocUnit(k.apc4 || 0);
+            document.getElementById('profile-duel').innerText = `${k.duels[activeKey] || 0}M`;
+
+            let cpGrowthStr = "base level";
+            let killsGrowthStr = "base level";
+            let apc1GrowthStr = "base level";
+
+            const currentSnap = k.snapshots ? k.snapshots[activeKey] : null;
+            const prevSnap = (k.snapshots && prevKey) ? k.snapshots[prevKey] : null;
+
+            if (currentSnap && prevSnap) {
+                const cpDiff = currentSnap.cp - prevSnap.cp;
+                const killsDiff = currentSnap.kills - prevSnap.kills;
+                const apc1Diff = currentSnap.apc1 - prevSnap.apc1;
+
+                cpGrowthStr = cpDiff >= 0 ? `+${parseApocUnit(cpDiff)} growth` : `${parseApocUnit(cpDiff)} growth`;
+                killsGrowthStr = killsDiff >= 0 ? `+${parseKillsUnit(killsDiff)} growth` : `${parseKillsUnit(killsDiff)} growth`;
+                apc1GrowthStr = apc1Diff >= 0 ? `+${parseApocUnit(apc1Diff)} growth` : `${parseApocUnit(apc1Diff)} growth`;
+            } else if (currentSnap) {
+                cpGrowthStr = "first snap recorded";
+                killsGrowthStr = "first snap recorded";
+                apc1GrowthStr = "first snap recorded";
+            }
+
+            document.getElementById('profile-cp-growth').innerText = cpGrowthStr;
+            document.getElementById('profile-kills-growth').innerText = killsGrowthStr;
+            document.getElementById('profile-apc1-growth').innerText = apc1GrowthStr;
+
+            const isOfficer = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+            const isSelf = activeSimulatedId === k.id;
+            const canCalibrate = isOfficer || isSelf;
+
+            const actionContainer = document.getElementById('profile-action-container');
+            if (canCalibrate) {
+                actionContainer.innerHTML = `
+                    <button type="button" class="flex-1 bg-militaryOrange text-black text-xs font-bold font-rajdhani py-2 rounded-lg uppercase" onclick="toggleProfileModal(false); triggerFighterCalibrationModal('${k.id}');">⚙️ Calibrate Stats</button>
+                `;
+            } else {
+                actionContainer.innerHTML = `
+                    <div class="flex-1 text-center py-2 text-zinc-500 font-bold border border-white/5 rounded-lg bg-[#0e1118] text-[10px] uppercase">🔒 Calibration Locked (Inquire with Leadership)</div>
+                `;
+            }
+
+            toggleProfileModal(true);
+        }
+
+        function triggerFighterCalibrationModal(id) {
+            const k = survivors.find(s => s.id === id);
+            if(!k) return;
+            
+            const isOfficer = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+            if(!isOfficer && activeSimulatedId !== k.id) {
+                showNotification("Blocked: You can only calibrate your own stats.", false); return;
+            }
+
+            if(activeSimulatorRole === "R4" && ["R5", "R4"].includes(k.rank) && activeSimulatedId !== k.id) {
+                showNotification("Blocked: Officers cannot re-calibrate other Officer/Leader stats.", false); return;
+            }
+
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            document.getElementById('form-modal-title').innerText = `Calibrate: ${k.name}`;
+            document.getElementById('edit-fighter-id').value = k.id;
+            document.getElementById('form-name').value = k.name;
+            document.getElementById('form-rank').value = k.rank;
+            document.getElementById('form-cp').value = k.total_cp;
+            document.getElementById('form-apc1').value = k.apc1;
+            document.getElementById('form-apc2').value = k.apc2 || 0;
+            document.getElementById('form-apc3').value = k.apc3 || 0;
+            document.getElementById('form-apc4').value = k.apc4 || 0;
+            document.getElementById('form-kills').value = k.kills_gain;
+            document.getElementById('form-duel').value = k.duels[activeKey] || 0;
+
+            document.getElementById('form-name').disabled = !["Admin", "R5"].includes(activeSimulatorRole);
+            document.getElementById('form-rank').disabled = !["Admin", "R5"].includes(activeSimulatorRole);
+
+            const inputDuel = document.getElementById('form-duel');
+            const labelDuel = document.getElementById('form-duel-label');
+            if (!isOfficer) {
+                inputDuel.disabled = true;
+                inputDuel.classList.add('opacity-50');
+                labelDuel.innerHTML = "Active Duel Score (M) <span class='text-zombieBlood font-bold'>(Officer Lock)</span>";
+            } else {
+                inputDuel.disabled = false;
+                inputDuel.classList.remove('opacity-50');
+                labelDuel.innerHTML = "Active Duel Score (M)";
+            }
+
+            toggleEnlistModal(true);
+        }
+
+        function handleEnlistmentFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-fighter-id').value;
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            
+            const payload = {
+                name: document.getElementById('form-name').value,
+                rank: document.getElementById('form-rank').value,
+                total_cp: parseFloat(document.getElementById('form-cp').value)||0,
+                apc1: parseFloat(document.getElementById('form-apc1').value)||0,
+                apc2: parseFloat(document.getElementById('form-apc2').value)||0,
+                apc3: parseFloat(document.getElementById('form-apc3').value)||0,
+                apc4: parseFloat(document.getElementById('form-apc4').value)||0,
+                kills_gain: parseFloat(document.getElementById('form-kills').value)||0,
+            };
+            const duelVal = parseInt(document.getElementById('form-duel').value)||0;
+
+            if(id) {
+                const idx = survivors.findIndex(s=>s.id===id);
+                const updatedObj = { ...survivors[idx], ...payload };
+                
+                const isOfficer = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+                if (isOfficer) {
+                    updatedObj.duels[activeKey] = duelVal;
+                }
+                
+                if (!updatedObj.snapshots) updatedObj.snapshots = {};
+                updatedObj.snapshots[activeKey] = {
+                    cp: payload.total_cp,
+                    apc1: payload.apc1,
+                    kills: payload.kills_gain
+                };
+
+                survivors[idx] = updatedObj;
+                showNotification("Stats updated.");
+            } else {
+                const newId = Date.now().toString();
+                const newRecruit = { 
+                    id: newId, 
+                    ...payload, 
+                    duels: { [activeKey]: duelVal },
+                    snapshots: {
+                        [activeKey]: {
+                            cp: payload.total_cp,
+                            apc1: payload.apc1,
+                            kills: payload.kills_gain
+                        }
+                    }
+                };
+                survivors.push(newRecruit);
+                showNotification("Fighter deployed.");
+            }
+
+            saveOutpostState();
+            if(!document.getElementById('view-roster').classList.contains('hidden')) rebuildRosterTable();
+            renderAllHUD();
+            toggleEnlistModal(false);
+        }
+
+        function openSundayUploadPortalPage() {
+            document.getElementById('upload-form-league').value = currentLeague;
+            document.getElementById('upload-form-week').value = currentWeek;
+            document.getElementById('upload-form-opponent').value = currentOpponent;
+
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            document.getElementById('batch-upload-list').innerHTML = survivors.map(k => `
+                <div class="flex justify-between items-center py-2 border-b border-white/5 text-xs">
+                    <span class="font-bold text-white">${k.name} (${k.rank})</span>
+                    <input type="number" class="sunday-batch-input bg-[#06080c] border border-[#1d2434] rounded text-white font-orbitron font-bold text-right py-1 px-2 w-[85px] focus:outline-none focus:border-militaryOrange" data-id="${k.id}" value="${k.duels[activeKey]||0}">
+                </div>
+            `).join('');
+        }
+
+        function loadMatchupForEditing(histId) {
+            const hist = duelLogsHistory.find(h => h.id === histId);
+            if (!hist) return;
+
+            document.getElementById('upload-form-league').value = hist.league;
+            document.getElementById('upload-form-week').value = hist.week;
+            document.getElementById('upload-form-opponent').value = hist.opponent;
+
+            document.getElementById('batch-upload-list').innerHTML = survivors.map(k => `
+                <div class="flex justify-between items-center py-2 border-b border-white/5 text-xs">
+                    <span class="font-bold text-white">${k.name} (${k.rank})</span>
+                    <input type="number" class="sunday-batch-input bg-[#06080c] border border-[#1d2434] rounded text-white font-orbitron font-bold text-right py-1 px-2 w-[85px] focus:outline-none focus:border-militaryOrange" data-id="${k.id}" value="${hist.logs[k.id] || 0}">
+                </div>
+            `).join('');
+
+            navigateView('upload');
+            showNotification(`Editing historical: ${hist.league} ${hist.week}`);
+        }
+
+        async function saveSundayBatchUploadData() {
+            if (isBatchSaving) return;
+
+            const leagueInput = document.getElementById('upload-form-league').value || "Season 1";
+            const weekInput = document.getElementById('upload-form-week').value || "Week 1";
+            const opponentInput = document.getElementById('upload-form-opponent').value || "Target";
+
+            const duplicateMatch = duelLogsHistory.find(h => 
+                h.league.trim().toLowerCase() === leagueInput.trim().toLowerCase() && 
+                h.week.trim().toLowerCase() === weekInput.trim().toLowerCase()
+            );
+
+            if (duplicateMatch) {
+                const confirmed = await openCustomBunkerDialog(
+                    "⚠️ OVERWRITE MATCH DATA?",
+                    `An entry for "${leagueInput} • ${weekInput}" already exists in the logs. Click VERIFY to overwrite, or ABORT to cancel and change the week/league name manually.`,
+                    false
+                );
+                if (!confirmed) {
+                    showNotification("Upload process aborted. You can now modify the week descriptor.", false);
+                    document.getElementById('upload-form-league').focus();
+                    return;
+                }
+            }
+
+            isBatchSaving = true;
+            const commitBtn = document.getElementById('btn-commit-batch-scores');
+            const originalBtnText = commitBtn.innerText;
+            commitBtn.innerText = "⏳ COMMITTING...";
+            commitBtn.disabled = true;
+
+            currentLeague = leagueInput;
+            currentWeek = weekInput;
+            currentOpponent = opponentInput;
+            
+            localStorage.setItem('fkit_active_league', currentLeague);
+            localStorage.setItem('fkit_active_week', currentWeek);
+            localStorage.setItem('fkit_active_opponent', currentOpponent);
+
+            const activeKey = `${currentLeague}_${currentWeek}`.replace(/ /g, '_');
+            let batchLogs = {};
+            
+            document.querySelectorAll('.sunday-batch-input').forEach(input => {
+                const sid = input.getAttribute('data-id');
+                const val = parseInt(input.value)||0;
+                const idx = survivors.findIndex(s=>s.id===sid);
+                if(idx !== -1) { 
+                    survivors[idx].duels[activeKey] = val; 
+                    batchLogs[sid] = val; 
+                }
+            });
+
+            const targetLogId = duplicateMatch ? duplicateMatch.id : "hist-" + Date.now();
+            const logEntry = {
+                id: targetLogId, league: currentLeague, week: currentWeek, opponent: currentOpponent,
+                timestamp: Date.now(), logs: batchLogs
+            };
+
+            const existIdx = duelLogsHistory.findIndex(h => h.id === targetLogId);
+            if(existIdx !== -1) duelLogsHistory[existIdx] = logEntry;
+            else duelLogsHistory.unshift(logEntry);
+
+            localStorage.setItem('fkit_active_history_v3', JSON.stringify(duelLogsHistory));
+            saveOutpostState(); 
+            navigateView('dashboard'); 
+            showNotification(`Weekly VS duel synchronized.`);
+
+            isBatchSaving = false;
+            commitBtn.innerText = originalBtnText;
+            commitBtn.disabled = false;
+        }
+
+        function renderDuelLogsHistoryPage() {
+            const container = document.getElementById('history-logs-container');
+            const searchVal = document.getElementById('history-search-input').value.toLowerCase();
+            const sortVal = document.getElementById('history-sort-dropdown').value;
+            container.innerHTML = "";
+
+            let filteredLogs = duelLogsHistory.filter(h => h.opponent.toLowerCase().includes(searchVal));
+            let mappedLogs = filteredLogs.map(h => {
+                const totalScore = Object.values(h.logs).reduce((a,b)=>a+b, 0);
+                return { ...h, totalScore };
+            });
+
+            if(sortVal === "date_desc") mappedLogs.sort((a,b) => b.timestamp - a.timestamp);
+            else if(sortVal === "date_asc") mappedLogs.sort((a,b) => a.timestamp - b.timestamp);
+            else if(sortVal === "score_desc") mappedLogs.sort((a,b) => b.totalScore - a.totalScore);
+            else if(sortVal === "score_asc") mappedLogs.sort((a,b) => a.totalScore - b.totalScore);
+
+            if (mappedLogs.length === 0) {
+                container.innerHTML = `<div class="text-center p-6 bg-[#0c0e15] text-[#7c8b9d] text-xs rounded-xl border border-white/5">No historical records match filter.</div>`; return;
+            }
+
+            mappedLogs.forEach(hist => {
+                const dateStr = new Date(hist.timestamp).toLocaleDateString();
+                const isOfficer = ["Admin", "R5", "R4"].includes(activeSimulatorRole);
+                const editButtonMarkup = isOfficer ? `
+                    <button onclick="loadMatchupForEditing('${hist.id}')" class="flex-1 text-center text-[10px] text-militaryYellow font-bold uppercase py-1 border border-militaryYellow/20 rounded hover:bg-militaryYellow/10">
+                        ✏️ Edit Matchup
+                    </button>` : '';
+
+                container.innerHTML += `
+                    <div class="bg-[#0c0e15] border border-[#1d2538] rounded-xl p-3 flex flex-col gap-2">
+                        <div class="flex justify-between items-start border-b border-white/5 pb-2">
+                            <div>
+                                <span class="font-orbitron font-bold text-xs text-militaryOrange uppercase">${hist.league} • ${hist.week}</span>
+                                <div class="text-[10px] text-[#7c8b9d] mt-0.5">VS: <strong class="text-white">${hist.opponent}</strong></div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[9px] text-[#7c8b9d] block">${dateStr}</span>
+                                <span class="font-orbitron font-black text-xs text-toxicGreen">${hist.totalScore}M Total</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button onclick="document.getElementById('grid-${hist.id}').classList.toggle('hidden'); playSynthesizedSound('beep');" class="flex-1 text-center text-[10px] text-bioCyan font-bold uppercase py-1 border border-bioCyan/20 rounded hover:bg-bioCyan/10">
+                                📊 View Member Grid
+                            </button>
+                            ${editButtonMarkup}
+                        </div>
+                        <div id="grid-${hist.id}" class="hidden flex-col gap-1 pt-2 max-h-[150px] overflow-y-auto pr-1">
+                            ${Object.entries(hist.logs).map(([id, s]) => `
+                                <div class="flex justify-between text-[11px] py-0.5 border-b border-white/5">
+                                    <span class="text-[#7c8b9d]">${survivors.find(su=>su.id===id)?.name || id}</span>
+                                    <strong class="text-white font-orbitron">${s}M</strong>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function showNotification(message, isSuccess = true) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'border-l-4 bg-[#111522] text-white p-3 rounded-lg shadow-lg font-bold text-xs flex items-center justify-between transition-all';
+            toast.style.borderLeftColor = isSuccess ? '#39ff14' : '#ff4500';
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function openCustomBunkerDialog(title, msg, prompt = false, defVal = "") {
+            playSynthesizedSound('beep');
+            isModalInPromptMode = prompt;
+            document.getElementById('dialog-header-title').innerText = title;
+            document.getElementById('dialog-body-msg').innerText = msg;
+            const inputWrap = document.getElementById('dialog-input-wrapper');
+            const input = document.getElementById('dialog-text-input');
+            if(prompt) { inputWrap.classList.remove('hidden'); input.value = defVal; }
+            else inputWrap.classList.add('hidden');
+            document.getElementById('terminal-dialog').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('terminal-dialog-box').classList.remove('scale-95');
+            return new Promise(resolve => modalResolveCallback = resolve);
+        }
+
+        function dismissCustomModal(approved) {
+            playSynthesizedSound('beep');
+            document.getElementById('terminal-dialog').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('terminal-dialog-box').classList.add('scale-95');
+            if (modalResolveCallback) {
+                if (approved) modalResolveCallback(isModalInPromptMode ? document.getElementById('dialog-text-input').value.trim() : true);
+                else modalResolveCallback(null);
+            }
+        }
+
+        async function openSignatureCredentialPrompt() {
+            const presetVal = registeredCallsign || "Mooshii";
+            const customInput = await openCustomBunkerDialog("👤 SECURE IDENTIFICATION", "Enter verified callsign/signature:", true, presetVal);
+            if (customInput) {
+                registeredCallsign = customInput; localStorage.setItem('fkit_callsign', registeredCallsign);
+                document.getElementById('auth-signature-btn').innerHTML = `🐾 Callsign Bound: <strong>${registeredCallsign}</strong>`;
+                const match = survivors.find(k => k.name.toLowerCase() === registeredCallsign.toLowerCase());
+                if (match) {
+                    activeSimulatorRole = match.rank; activeSimulatedId = match.id;
+                    document.getElementById('role-simulator-dropdown').value = match.rank;
+                    showNotification(`Signature synced. Clearance updated!`);
+                } else {
+                    document.getElementById('role-simulator-dropdown').value = "R1";
+                    showNotification(`Signature unknown. Assigned R1 recruit clearance.`, false);
+                }
+                evaluateClearances(); if(!document.getElementById('view-roster').classList.contains('hidden')) rebuildRosterTable();
+            }
+        }
+
+        async function triggerEditMatchupDetails() {
+            const leg = await openCustomBunkerDialog("✏️ MODIFY SEASON NAME", "Enter Season descriptor name:", true, currentLeague);
+            if (!leg) return;
+            const wk = await openCustomBunkerDialog("✏️ MODIFY WEEK NAME", "Enter combat week index descriptor:", true, currentWeek);
+            if (!wk) return;
+            const opp = await openCustomBunkerDialog("✏️ MODIFY MATCHUP OPPONENT", "Enter target opponent alliance tag name:", true, currentOpponent);
+            if (!opp) return;
+
+            currentLeague = leg;
+            currentWeek = wk;
+            currentOpponent = opp;
+
+            localStorage.setItem('fkit_active_league', currentLeague);
+            localStorage.setItem('fkit_active_week', currentWeek);
+            localStorage.setItem('fkit_active_opponent', currentOpponent);
+
+            showNotification("Current tracking matchup targets calibrated.");
+            renderAllHUD();
+        }
+
+        /* Playground state and multi-entity models initialization */
+        function setupFeralPlayground() {
+            liveKittens = [];
+
+            CAT_MASCOTS.forEach((config, idx) => {
+                const actor = new LiveKittenActor(config);
+                actor.x = (idx * 100) + 40; // spaced organically
+                actor.y = 80;               // Start comfortably inside sandbox
+                actor.targetX = actor.x;
+                actor.targetY = actor.y;
+                liveKittens.push(actor);
+            });
+
+            // Set physics loop step interval to 30ms for 33 FPS fluid updates
+            setInterval(updatePlaygroundPhysics, 30);
+            setInterval(recalculateUIPlatformHeights, 2000); // recalibrate platform heights
+        }
+
+        function setupActorDragListeners(actor) {
+            const el = actor.element;
+            if(!el) return;
+
+            let startX = 0;
+            let startY = 0;
+            let startMouseX = 0;
+            let startMouseY = 0;
+
+            const onPointerDown = (e) => {
+                e.preventDefault();
+                actor.isDragging = true;
+                actor.setBehavior('dragged');
+                playSynthesizedSound('beep');
+                
+                startX = actor.x;
+                startY = actor.y;
+                startMouseX = e.pageX || (e.touches && e.touches[0].pageX);
+                startMouseY = e.pageY || (e.touches && e.touches[0].pageY);
+
+                document.addEventListener('mousemove', onPointerMove);
+                document.addEventListener('mouseup', onPointerUp);
+                document.addEventListener('touchmove', onPointerMove, { passive: false });
+                document.addEventListener('touchend', onPointerUp);
+            };
+
+            const onPointerMove = (e) => {
+                if(!actor.isDragging) return;
+                e.preventDefault();
+                
+                const sandbox = document.getElementById('playground-field-overlay');
+                if(!sandbox) return;
+                const sandboxRect = sandbox.getBoundingClientRect();
+                const activeView = document.querySelector('.app-content:not(.hidden)');
+                const sandboxBottom = getSandboxBottom();
+
+                const currentMouseX = e.pageX || (e.touches && e.touches[0].pageX);
+                const currentMouseY = e.pageY || (e.touches && e.touches[0].pageY);
+
+                const dx = currentMouseX - startMouseX;
+                const dy = currentMouseY - startMouseY;
+
+                let relativeX = startX + dx;
+                let relativeY = startY + dy;
+
+                // constrain dynamically to terminated sandbox floor to prevent dead scrolls
+                relativeX = Math.max(0, Math.min(relativeX, sandboxRect.width - 65));
+                relativeY = Math.max(0, Math.min(relativeY, sandboxBottom - 75));
+
+                actor.x = relativeX;
+                actor.y = relativeY;
+                actor.targetX = relativeX;
+                actor.targetY = relativeY;
+                actor.vx = 0;
+                actor.vy = 0;
+
+                el.style.left = actor.x + 'px';
+                el.style.top = actor.y + 'px';
+
+                if (Math.random() > 0.95) {
+                    spawnHeartParticleAt(actor.x + 35, actor.y + 15);
+                    playSynthesizedSound('purr');
+                }
+            };
+
+            const onPointerUp = () => {
+                if(!actor.isDragging) return;
+                actor.isDragging = false;
+                document.removeEventListener('mousemove', onPointerMove);
+                document.removeEventListener('mouseup', onPointerUp);
+                document.removeEventListener('touchmove', onPointerMove);
+                document.removeEventListener('touchend', onPointerUp);
+
+                actor.targetX = actor.x;
+                actor.targetY = actor.y;
+                actor.vx = 0;
+                actor.vy = 0;
+                actor.setBehavior('idle');
+            };
+
+            el.addEventListener('mousedown', onPointerDown);
+            el.addEventListener('touchstart', onPointerDown, { passive: false });
+
+            // Tap tail action listener
+            el.addEventListener('click', (e) => {
+                const rect = el.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                if(clickX < 28 && clickY > 35) {
+                    e.stopPropagation();
+                    actor.setBehavior('startled');
+                }
+            });
+        }
+
+        function updatePlaygroundPhysics() {
+            const activeView = document.querySelector('.app-content:not(.hidden)');
+            if(!activeView || activeUIPlatforms.length === 0) return;
+
+            const scrollWidth = activeView.clientWidth;
+            const sandboxBottom = getSandboxBottom();
+
+            // Compute actual bounding coordinates of playground control buttons relative to overlay
+            const overlay = document.getElementById('playground-field-overlay');
+            const buttons = document.querySelectorAll('.playground-control-btn');
+            const buttonBoxes = [];
+            if (overlay) {
+                const overlayRect = overlay.getBoundingClientRect();
+                buttons.forEach(btn => {
+                    const r = btn.getBoundingClientRect();
+                    buttonBoxes.push({
+                        left: r.left - overlayRect.left,
+                        right: r.right - overlayRect.left,
+                        top: r.top - overlayRect.top,
+                        bottom: r.bottom - overlayRect.top
+                    });
+                });
+            }
+
+            // 1. UPDATE FLOATING/SWIMMING FISH COGNITION
+            spawnedFoods.forEach(fish => {
+                fish.x += fish.vx;
+                fish.y += fish.vy + Math.sin(Date.now() / 150) * 0.4;
+
+                const sandbox = document.getElementById('playground-field-overlay');
+                if (sandbox) {
+                    const margin = 20;
+                    // Horizontal boundaries bouncing checks
+                    if (fish.x < margin) { fish.x = margin; fish.vx *= -1; }
+                    if (fish.x > sandbox.clientWidth - margin - 15) { fish.x = sandbox.clientWidth - margin - 15; fish.vx *= -1; }
+                    
+                    // Vertical boundaries bouncing checks strictly constrained above the terminated floor
+                    if (fish.y < margin) { fish.y = margin; fish.vy *= -1; }
+                    if (fish.y > sandboxBottom - margin - 15) { fish.y = sandboxBottom - margin - 15; fish.vy *= -1; }
+                }
+
+                if (fish.element) {
+                    fish.element.style.left = fish.x + 'px';
+                    fish.element.style.top = fish.y + 'px';
+                    const transformFlip = fish.vx < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+                    fish.element.style.transform = `${transformFlip} rotate(${fish.vy * 10}deg)`;
+                }
+            });
+
+            // 2. KITTEN MOVEMENT ENGINE
+            liveKittens.forEach((actor, idx) => {
+                if(actor.isDragging || !actor.element) return;
+
+                // Handle Eating status freeze cooldown
+                if (actor.state === 'eating') {
+                    actor.vx = 0;
+                    actor.vy = 0;
+                    if (actor.stateTimer > 0) {
+                        actor.stateTimer--;
+                        const chewScale = 1.0 + Math.sin(Date.now() / 40) * 0.06;
+                        if (actor.element) {
+                            const renderWrap = actor.element.querySelector('.cat-render-wrapper');
+                            if (renderWrap) renderWrap.style.transform = `scale(${chewScale})`;
+                        }
+                        return; // Halt exploration during eating
+                    } else {
+                        actor.setBehavior('idle');
+                    }
+                }
+
+                if (actor.bubbleTimer > 0) {
+                    actor.bubbleTimer--;
+                    if(actor.bubbleTimer === 0) {
+                        const b = document.getElementById(`bubble-${actor.id}`);
+                        if(b) b.classList.remove('active');
+                    }
+                }
+
+                // Handle Dialogue Cooldowns & Periodic Speaking
+                if (actor.state !== 'sleeping' && actor.bubbleTimer === 0) {
+                    if (actor.dialogueCooldown > 0) {
+                        actor.dialogueCooldown--;
+                    } else {
+                        const randIdx = Math.floor(Math.random() * RANDOM_CAT_DIALOGUES.length);
+                        const phrase = RANDOM_CAT_DIALOGUES[randIdx];
+                        actor.speak(phrase);
+                        actor.dialogueCooldown = Math.floor(Math.random() * 67) + 333; // 10-12s
+                    }
+                }
+
+                if (actor.state === 'sleeping' && Math.random() > 0.92) {
+                    spawnZzzParticleAt(actor.x + 40, actor.y + 15);
+                }
+
+                if (catnipActive && Math.random() > 0.85) {
+                    spawnLeafParticleAt(actor.x + Math.random() * 40, actor.y + Math.random() * 40);
+                }
+
+                // Laser target tracking priority
+                if (isLaserActive) {
+                    const angle = (idx * (2 * Math.PI)) / liveKittens.length;
+                    const packRadius = 40; 
+                    const targetOffsetX = Math.cos(angle) * packRadius;
+                    const targetOffsetY = Math.sin(angle) * packRadius;
+
+                    actor.targetX = Math.max(10, Math.min(laserPosition.x + targetOffsetX - 30, scrollWidth - 65));
+                    actor.targetY = laserPosition.y + targetOffsetY - 50;
+                    if(actor.state !== 'walking' && actor.state !== 'jumping') {
+                        actor.setBehavior('walking');
+                    }
+                }
+
+                // Swimming Fish tracking priority
+                let closestFish = null;
+                let closestDistance = 99999;
+                
+                spawnedFoods.forEach(fish => {
+                    const d = Math.hypot(actor.x - fish.x, actor.y - fish.y);
+                    if (d < closestDistance) {
+                        closestDistance = d;
+                        closestFish = fish;
+                    }
+                });
+
+                if (closestFish && !isLaserActive && actor.state !== 'eating' && actor.state !== 'startled' && actor.state !== 'fighting') {
+                    actor.targetX = closestFish.x - 20;
+                    actor.targetY = closestFish.y - 50;
+                    if (actor.state !== 'walking') actor.setBehavior('walking');
+                }
+
+                // Drop platforms state timer
+                if (actor.dropThroughTimer > 0) {
+                    actor.dropThroughTimer--;
+                }
+
+                // State transitions (Only when not actively tracking laser or fish)
+                if (!isLaserActive && !closestFish) {
+                    if (catnipActive) {
+                        const time = Date.now() * 0.001;
+                        const swayX = Math.sin(time + idx * 2.5) * 50;
+                        const swayY = Math.cos(time * 0.7 + idx * 1.5) * 25;
+                        
+                        actor.targetX = Math.max(15, Math.min(actor.x + swayX, scrollWidth - 65));
+                        actor.targetY = Math.max(45, Math.min(actor.y + swayY, sandboxBottom - 75));
+                        
+                        if (actor.state !== 'catnip-high') {
+                            actor.setBehavior('catnip-high');
+                        }
+                    } else {
+                        if (actor.stateTimer > 0) {
+                            actor.stateTimer--;
+                        } else {
+                            const roll = Math.random();
+                            if(roll < 0.25) {
+                                actor.dropThroughTimer = 15; 
+                                actor.setBehavior('walking');
+                                actor.targetY = actor.y + 100;
+                            } else if(roll < 0.5) {
+                                actor.setBehavior('walking');
+                                actor.targetX = Math.random() * (scrollWidth - 80) + 10;
+                            } else if(roll < 0.75) {
+                                actor.setBehavior('idle');
+                            } else if(roll < 0.9) {
+                                actor.setBehavior('sleeping');
+                            } else {
+                                actor.setBehavior('jumping');
+                                actor.targetX = Math.random() * (scrollWidth - 80) + 10;
+                                actor.targetY = Math.max(10, actor.y - 120);
+                            }
+                        }
+                    }
+                }
+
+                // Gravity & Platforms collisions logic
+                let standingOnPlatform = null;
+                const isClimbing = isLaserActive || closestFish || catnipActive || actor.state === 'jumping' || actor.state === 'startled';
+
+                if (!isClimbing) {
+                    if (actor.dropThroughTimer === 0) {
+                        activeUIPlatforms.forEach(plat => {
+                            const centerSelf = actor.x + 35;
+                            if (centerSelf >= plat.left && centerSelf <= plat.right) {
+                                if (actor.y + 60 >= plat.top && actor.y + 50 <= plat.top && actor.vy >= 0) {
+                                    standingOnPlatform = plat;
+                                }
+                            }
+                        });
+                    }
+
+                    if (standingOnPlatform) {
+                        actor.y = standingOnPlatform.top - 58;
+                        actor.vy = 0;
+                    } else {
+                        actor.vy += 0.8; // gravity acceleration
+                        if (actor.vy > 12) actor.vy = 12; // clamp terminal velocity
+                    }
+
+                    // Climbing check (horizontal barrier collision)
+                    let horizontalBlocked = null;
+                    activeUIPlatforms.forEach(plat => {
+                        const nextX = actor.x + Math.sign(actor.vx) * 15 + 30;
+                        if (nextX >= plat.left && nextX <= plat.right) {
+                            if (actor.y + 50 >= plat.top && actor.y + 20 <= plat.bottom) {
+                                horizontalBlocked = plat;
+                            }
+                        }
+                    });
+
+                    if (horizontalBlocked && actor.state === 'walking') {
+                        actor.setBehavior('jumping');
+                        actor.targetY = horizontalBlocked.top - 58;
+                        actor.targetX = actor.x;
+                        actor.vy = -10; // Jumping impulse!
+                    }
+                }
+
+                // Kinetic Movement Vectors Solver (Smooth SEEK Velocity math)
+                let seekForceX = 0;
+                let seekForceY = 0;
+
+                const distanceX = actor.targetX - actor.x;
+                const distanceY = isClimbing ? (actor.targetY - actor.y) : 0;
+
+                const distToTarget = Math.hypot(distanceX, distanceY);
+                if (distToTarget > 5) {
+                    const speed = (actor.state === 'catnip-high') ? 6 : (actor.state === 'walking' ? 2.5 : 4);
+                    seekForceX = (distanceX / distToTarget) * speed;
+                    if (isClimbing) {
+                        seekForceY = (distanceY / distToTarget) * speed;
+                    }
+                }
+
+                // Dampened interpolation to prevent immediate snaps
+                const accel = 0.15;
+                actor.vx += (seekForceX - actor.vx) * accel;
+                if (isClimbing) {
+                    actor.vy += (seekForceY - actor.vy) * accel;
+                }
+
+                // Apply velocity vector directly to spatial position coordinates
+                actor.x += actor.vx;
+                actor.y += actor.vy;
+
+                // Bounce off horizontally-facing side screen margins
+                if (actor.x <= 10 && actor.vx < 0) { actor.vx = 0; }
+                if (actor.x >= scrollWidth - 80 && actor.vx > 0) { actor.vx = 0; }
+
+                // Check food competition trigger when at targeting coordinates
+                if (Math.abs(distanceX) <= 10 && closestFish) {
+                    if (closestFish && Math.abs(actor.x - closestFish.x) < 30 && Math.abs(actor.y - closestFish.y) < 60) {
+                        let rivals = liveKittens.filter(rival => 
+                            rival.id !== actor.id && 
+                            rival.state !== 'dragged' && 
+                            Math.abs(rival.x - closestFish.x) < 40 && 
+                            Math.abs(rival.y - closestFish.y) < 60
+                        );
+
+                        if (rivals.length > 0) {
+                            const competitor = rivals[0];
+                            actor.setBehavior('startled');
+                            competitor.setBehavior('startled');
+
+                            actor.speak("MINE! 😾");
+                            competitor.speak("NO WAY! ⚡");
+                            playSynthesizedSound('hiss');
+
+                            spawnClashVisualAt(closestFish.x, closestFish.y);
+
+                            // Bouncy physical repulsion exchange
+                            actor.vx = actor.x > competitor.x ? 5 : -5;
+                            competitor.vx = competitor.x > actor.x ? 5 : -5;
+                            actor.vy = -4;
+                            competitor.vy = -4;
+
+                            const targetedFishRef = closestFish;
+                            setTimeout(() => {
+                                const foodExists = spawnedFoods.find(f => f.id === targetedFishRef.id);
+                                if (foodExists) {
+                                    const winner = Math.random() > 0.5 ? actor : competitor;
+                                    winner.setBehavior('eating');
+                                    removeFoodEntity(targetedFishRef);
+                                }
+                            }, 350);
+                        } else {
+                            actor.setBehavior('eating');
+                            removeFoodEntity(closestFish);
+                        }
+                    }
+                }
+
+                // Avoid overlap with Control Buttons. Treat them as solid vertical/horizontal platforms!
+                buttonBoxes.forEach(box => {
+                    const catLeft = actor.x;
+                    const catRight = actor.x + 70;
+                    const catTop = actor.y;
+                    const catBottom = actor.y + 75;
+
+                    if (catRight > box.left && catLeft < box.right && catBottom > box.top && catTop < box.bottom) {
+                        const overlapLeft = catRight - box.left;
+                        const overlapRight = box.right - catLeft;
+                        const overlapTop = catBottom - box.top;
+                        const overlapBottom = box.bottom - catTop;
+
+                        const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                        if (minOverlap === overlapLeft) {
+                            actor.x -= overlapLeft; actor.vx = 0;
+                        } else if (minOverlap === overlapRight) {
+                            actor.x += overlapRight; actor.vx = 0;
+                        } else if (minOverlap === overlapTop) {
+                            // Stand on top of the button!
+                            actor.y -= overlapTop; actor.vy = 0;
+                        } else {
+                            actor.y += overlapBottom; actor.vy = 0;
+                        }
+                    }
+                });
+
+                // Apply safety limits clamps
+                actor.x = Math.max(10, Math.min(actor.x, scrollWidth - 80));
+                actor.y = Math.max(10, Math.min(actor.y, sandboxBottom - 75));
+
+                if (actor.element) {
+                    actor.element.style.left = actor.x + 'px';
+                    actor.element.style.top = actor.y + 'px';
+                    const wrap = actor.element.querySelector('.cat-render-wrapper');
+                    if(wrap) {
+                        wrap.style.transform = actor.direction === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+                    }
+                }
+            });
+
+            for (let i = 0; i < liveKittens.length; i++) {
+                for (let j = i + 1; j < liveKittens.length; j++) {
+                    const c1 = liveKittens[i];
+                    const c2 = liveKittens[j];
+                    if (c1.isDragging || c2.isDragging || c1.state === 'eating' || c2.state === 'eating') continue;
+
+                    const dx = c2.x - c1.x;
+                    const dy = c2.y - c1.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = 48; // Safe physical buffer radius (px)
+
+                    if (dist < minDist) {
+                        // 1. Resolve overlap instantly (pre-emptive position projection)
+                        const overlap = minDist - dist;
+                        const nx = dx / (dist || 1);
+                        const ny = dy / (dist || 1);
+
+                        // Push them apart instantly along the collision normal
+                        c1.x -= nx * overlap * 0.5;
+                        c1.y -= ny * overlap * 0.5;
+                        c2.x += nx * overlap * 0.5;
+                        c2.y += ny * overlap * 0.5;
+
+                        // 2. Elastic Carrom-like momentum exchange (smooth bounce)
+                        const rvx = c2.vx - c1.vx;
+                        const rvy = c2.vy - c1.vy;
+
+                        // Velocity components along normal vector
+                        const velAlongNormal = rvx * nx + rvy * ny;
+
+                        // Only bounce if they are moving towards each other
+                        if (velAlongNormal < 0) {
+                            const restitution = 0.55; // High elasticity, smooth deflection
+                            const impulse = -(1 + restitution) * velAlongNormal / 2; // Equal masses (mass = 1)
+
+                            // Deflect current velocities smoothly
+                            c1.vx -= impulse * nx;
+                            c1.vy -= impulse * ny;
+                            c2.vx += impulse * nx;
+                            c2.vy += impulse * ny;
+
+                            // Spawn cute little clash particles if the collision is energetic
+                            if (Math.abs(velAlongNormal) > 2.5 && Math.random() > 0.8) {
+                                spawnClashVisualAt((c1.x + c2.x) / 2 + 30, (c1.y + c2.y) / 2 + 30);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function triggerSpawnFood() {
+            playSynthesizedSound('beep');
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+
+            const fish = document.createElement('div');
+            fish.className = 'food-item text-lg flex items-center justify-center absolute';
+            fish.innerHTML = `🐟`;
+            
+            // Random drop coordinates
+            const rx = Math.random() * (sandbox.clientWidth - 50) + 20;
+            const ry = Math.random() * (sandbox.clientHeight - 100) + 50; 
+            fish.style.left = rx + 'px';
+            fish.style.top = ry + 'px';
+
+            sandbox.appendChild(fish);
+            
+            // Set up swimming floating velocities
+            const speedScale = 2.5;
+            const vx = (Math.random() - 0.5) * speedScale;
+            const vy = (Math.random() - 0.5) * speedScale;
+
+            spawnedFoods.push({
+                element: fish,
+                x: rx,
+                y: ry,
+                vx: vx === 0 ? 1 : vx,
+                vy: vy === 0 ? 0.5 : vy,
+                isLanded: false,
+                id: 'fish-' + Date.now() + '-' + Math.floor(Math.random()*1000)
+            });
+
+            showNotification("Dropped a radioactive swimming treat in the sector!");
+        }
+
+        function removeFoodEntity(fishObj) {
+            if (fishObj.element) {
+                fishObj.element.style.opacity = '0';
+                setTimeout(() => {
+                    if (fishObj.element) fishObj.element.remove();
+                    spawnedFoods = spawnedFoods.filter(f => f.id !== fishObj.id);
+                }, 300);
+            }
+
+            // increase affection
+            liveKittens.forEach(k => {
+                if(k.state === 'eating') {
+                    k.affection += 5;
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => { spawnHeartParticleAt(k.x + 30, k.y + 10); }, i * 200);
+                    }
+                }
+            });
+        }
+
+        function triggerCatnip() {
+            playSynthesizedSound('beep');
+            if (catnipActive) return;
+            catnipActive = true;
+            
+            showNotification("🌿 Catnip mist sprayed! Felines in overdrive!");
+
+            // Fade in glowing overlay
+            const overlay = document.getElementById('catnip-mist-overlay');
+            if (overlay) {
+                overlay.style.opacity = '1';
+            }
+
+            const sandbox = document.getElementById('playground-field-overlay');
+            if (sandbox) {
+                // Spawn cascade of green leaf particles
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        const leaf = document.createElement('div');
+                        leaf.className = 'leaf-particle';
+                        leaf.innerText = '🍃';
+                        leaf.style.left = (Math.random() * sandbox.clientWidth) + 'px';
+                        leaf.style.top = '0px';
+                        sandbox.appendChild(leaf);
+                        setTimeout(() => leaf.remove(), 4000);
+                    }, i * 150);
+                }
+            }
+
+            // Force kittens into high-speed sandbox overdrive mode
+            liveKittens.forEach(k => {
+                k.setBehavior('catnip-high');
+                k.affection += 10;
+                
+                // Color eyes glowing green momentarily
+                const eye = k.element ? k.element.querySelector('.cat-eye-cyber') : null;
+                if (eye) eye.style.fill = '#39ff14';
+            });
+
+            catnipTimer = setTimeout(() => {
+                catnipActive = false;
+                showNotification("Catnip effects fading.", false);
+                
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                }
+
+                liveKittens.forEach(k => {
+                    k.setBehavior('idle');
+                    const eye = k.element ? k.element.querySelector('.cat-eye-cyber') : null;
+                    if (eye) eye.style.fill = k.color;
+                });
+            }, 8000);
+        }
+
+        function spawnScratchDamageAt(x, y) {
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+            const scratch = document.createElement('div');
+            scratch.className = 'claw-scratch-damage';
+            scratch.style.left = x + 'px';
+            scratch.style.top = y + 'px';
+            sandbox.appendChild(scratch);
+            setTimeout(() => scratch.remove(), 1500);
+        }
+
+        function spawnClashVisualAt(x, y) {
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+            const clash = document.createElement('div');
+            clash.className = 'clash-flash-particle';
+            clash.innerText = '⚡';
+            clash.style.left = x + 'px';
+            clash.style.top = y + 'px';
+            sandbox.appendChild(clash);
+            setTimeout(() => { if (clash) clash.remove(); }, 750);
+        }
+
+        function toggleLaserPointer() {
+            playSynthesizedSound('beep');
+            isLaserActive = !isLaserActive;
+            const btn = document.getElementById('laser-toggle-btn');
+            const dot = document.getElementById('laser-dot');
+            const reticle = document.getElementById('laser-reticle');
+            const activeView = document.querySelector('.app-content:not(.hidden)');
+
+            if (isLaserActive) {
+                if (btn) {
+                    btn.innerText = "🔴 Laser: ACTIVE";
+                    btn.className = "playground-control-btn bg-red-500/20 border border-red-500 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded transition-all shadow-[0_0_8px_#ef4444]";
+                }
+                if(dot) dot.style.display = 'block';
+                if(reticle) reticle.style.display = 'block';
+                if(activeView) {
+                    activeView.classList.add('laser-active-cursor');
+                    activeView.addEventListener('mousemove', trackLaserCursor);
+                    activeView.addEventListener('touchmove', trackLaserCursor);
+                }
+            } else {
+                if (btn) {
+                    btn.innerText = "🔴 Toggle Laser";
+                    btn.className = "playground-control-btn bg-hudPanel border border-red-500/30 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded hover:border-red-500/80 transition-all";
+                }
+                if(dot) dot.style.display = 'none';
+                if(reticle) reticle.style.display = 'none';
+                if(activeView) {
+                    activeView.classList.remove('laser-active-cursor');
+                    activeView.removeEventListener('mousemove', trackLaserCursor);
+                    activeView.removeEventListener('touchmove', trackLaserCursor);
+                }
+            }
+        }
+
+        function trackLaserCursor(e) {
+            const activeView = document.querySelector('.app-content:not(.hidden)');
+            if (!activeView) return;
+            const rect = activeView.getBoundingClientRect();
+            
+            const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+            const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+
+            laserPosition.x = clientX - rect.left + activeView.scrollLeft;
+            laserPosition.y = clientY - rect.top + activeView.scrollTop;
+
+            const dot = document.getElementById('laser-dot');
+            const reticle = document.getElementById('laser-reticle');
+            if(dot) {
+                dot.style.left = laserPosition.x + 'px';
+                dot.style.top = laserPosition.y + 'px';
+            }
+            if(reticle) {
+                reticle.style.left = laserPosition.x + 'px';
+                reticle.style.top = laserPosition.y + 'px';
+            }
+        }
+
+        function spawnZzzParticleAt(x, y) {
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+            const particle = document.createElement('div');
+            particle.className = 'particle-floating zzz-particle';
+            particle.innerText = 'Z';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            sandbox.appendChild(particle);
+            setTimeout(() => { if (particle) particle.remove(); }, 2500);
+        }
+
+        function spawnHeartParticleAt(x, y) {
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+            const particle = document.createElement('div');
+            particle.className = 'particle-floating heart-particle';
+            particle.innerText = '❤️';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            sandbox.appendChild(particle);
+            setTimeout(() => { if (particle) particle.remove(); }, 1200);
+        }
+
+        function spawnLeafParticleAt(x, y) {
+            const sandbox = document.getElementById('playground-field-overlay');
+            if(!sandbox) return;
+            const particle = document.createElement('div');
+            particle.className = 'particle-floating leaf-particle';
+            particle.innerText = '🍃';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            sandbox.appendChild(particle);
+            setTimeout(() => { if (particle) particle.remove(); }, 2000);
+        }
+
+        function scrollCarousel(carouselId, direction) {
+            playSynthesizedSound('beep');
+            const carousel = document.getElementById(carouselId);
+            if (carousel) {
+                const scrollAmount = carousel.clientWidth * 0.75;
+                carousel.scrollBy({
+                    left: direction * scrollAmount,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // Global functions bindings
+        window.navigateView = navigateView;
+        window.toggleSidebarMenu = toggleSidebarMenu;
+        window.toggleEnlistModal = toggleEnlistModal;
+        window.toggleProfileModal = toggleProfileModal;
+        window.triggerEnlistModal = triggerEnlistModal;
+        window.triggerFighterProfileModal = triggerFighterProfileModal;
+        window.triggerFighterCalibrationModal = triggerFighterCalibrationModal;
+        window.handleEnlistmentFormSubmit = handleEnlistmentFormSubmit;
+        window.saveSundayBatchUploadData = saveSundayBatchUploadData;
+        window.renderDuelLogsHistoryPage = renderDuelLogsHistoryPage;
+        window.loadMatchupForEditing = loadMatchupForEditing;
+        window.triggerEditMatchupDetails = triggerEditMatchupDetails;
+        window.openSignatureCredentialPrompt = openSignatureCredentialPrompt;
+        window.dismissCustomModal = dismissCustomModal;
+        window.toggleDuelDayState = toggleDuelDayState;
+        window.triggerSpawnFood = triggerSpawnFood;
+        window.triggerCatnip = triggerCatnip;
+        window.toggleLaserPointer = toggleLaserPointer;
+        window.swapOperationalRole = swapOperationalRole;
+        window.scrollCarousel = scrollCarousel;
+        window.rebuildRosterTable = rebuildRosterTable;
+        
+        // Finalize setup
+        window.addEventListener('DOMContentLoaded', () => {
+            loadOutpostState();
+            renderAllHUD();
+            setupFeralPlayground();
+            moveCatsToActiveView('view-dashboard');
+        });
+    </script>
+</body>
+</html>
